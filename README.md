@@ -44,7 +44,9 @@ Framstegen sparas i webbläsarens `localStorage` (nyckeln `trafikspel.v1`), allt
 3. Settings → Pages → Source: *Deploy from branch* → `main` / `(root)` → Save.
 4. Efter cirka en minut är appen live på https://poptrem911.github.io/trafikspel/
 
-**Uppdatera:** be Claude ändra i `index.html` i den här mappen, och dra sedan in den nya filen i repot (`index.html` → pennan → dra in filen → Commit changes).
+**Live:** https://poptrem911.github.io/trafikspel/ (repo: https://github.com/poptrem911/trafikspel, Pages från `main` / root).
+
+**Uppdatera:** Claude har push-behörighet till repot (Claude GitHub-appen är installerad), så be Claude göra ändringen och pusha. Sidan uppdateras ungefär en minut efter pushen. Manuellt alternativ: dra in den nya `index.html` (och vid behov `marken.js`) i repot via Add file → Upload files.
 
 **Tips för Pixel 8:** öppna adressen i Chrome → menyn ⋮ → *Lägg till på startskärmen*. Då startar appen som en vanlig app.
 
