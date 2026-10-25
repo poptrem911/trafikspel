@@ -1,0 +1,1100 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Trafikspel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#2a2f36">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Overpass:wght@500;700;800;900&family=Overpass+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: asphalt header band with a moving centre line, content on a cool road-grey ground, bottom tab bar on phones */
+:root{
+  --bg:#e8ebee; --surface:#ffffff; --surface-2:#f3f5f7; --fg:#15191e; --muted:#5a6370; --line:#d2d7dd;
+  --asphalt:#2a2f36; --asphalt-2:#363c45; --on-asphalt:#f2f3f5; --marking:#ffffff;
+  --yellow:#ffcc00; --on-yellow:#1b1600; --btn:#2a2f36; --on-btn:#f2f3f5; --blue:#0f5fb3; --link:#0b55a3;
+  --ok:#17824a; --ok-bg:#e1f3e8; --bad:#c3261c; --bad-bg:#fbe6e3;
+  --grass:#b4cf93; --grass-2:#a3c27f; --road:#555b63; --walk:#c9ccd0; --lot:#9da2a8;
+  --shadow:0 1px 2px rgba(20,25,30,.06),0 4px 16px rgba(20,25,30,.06);
+  --f-display:'Overpass','Arial Narrow',system-ui,sans-serif;
+  --f-body:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'Overpass Mono',ui-monospace,Menlo,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111417; --surface:#1b1f24; --surface-2:#232830; --fg:#edf0f3; --muted:#9aa4b0; --line:#2f363f;
+  --asphalt:#0b0d10; --asphalt-2:#1a1e24; --on-asphalt:#eef0f3; --link:#7fb4f0; --blue:#4d93e3; --btn:#2a3038; --on-btn:#eef0f3;
+  --ok:#4cc27f; --ok-bg:#143322; --bad:#ff7466; --bad-bg:#3a1714;
+  --grass:#3c5634; --grass-2:#35502e; --road:#4a5058; --walk:#7b8087; --lot:#62676e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111417; --surface:#1b1f24; --surface-2:#232830; --fg:#edf0f3; --muted:#9aa4b0; --line:#2f363f;
+  --asphalt:#0b0d10; --asphalt-2:#1a1e24; --on-asphalt:#eef0f3; --link:#7fb4f0; --blue:#4d93e3; --btn:#2a3038; --on-btn:#eef0f3;
+  --ok:#4cc27f; --ok-bg:#143322; --bad:#ff7466; --bad-bg:#3a1714;
+  --grass:#3c5634; --grass-2:#35502e; --road:#4a5058; --walk:#7b8087; --lot:#62676e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--asphalt)}
+h1,h2,h3{font-family:var(--f-display);line-height:1.1;text-wrap:balance;margin:0}
+button{font:inherit;color:inherit}
+a{color:var(--link)}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+.top{background:var(--asphalt);color:var(--on-asphalt);position:sticky;top:env(safe-area-inset-top,0px);z-index:30}
+.top-in{display:flex;align-items:center;gap:20px;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;cursor:pointer;background:none;border:0;padding:0}
+.brand svg{width:34px;height:34px;flex:none}
+.brand b{font-family:var(--f-display);font-weight:900;font-size:22px;letter-spacing:-.01em}
+.brand small{display:block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.65;margin-top:1px}
+.tabs-top{display:flex;gap:4px;margin-left:auto}
+.tabs-top button{background:none;border:0;padding:8px 12px;border-radius:999px;font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--on-asphalt);opacity:.75;cursor:pointer}
+.tabs-top button:hover{opacity:1;background:var(--asphalt-2)}
+.tabs-top button[aria-current="true"]{opacity:1;background:var(--yellow);color:var(--on-yellow)}
+.lane{height:6px;background:repeating-linear-gradient(90deg,var(--marking) 0 26px,transparent 26px 64px);opacity:.85;animation:lane 1.6s linear infinite;background-size:64px 6px;margin-bottom:-3px}
+@keyframes lane{to{background-position:-64px 0}}
+.bottom{display:none}
+@media (max-width:760px){
+  .tabs-top{display:none}
+  .bottom{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  .bottom button{background:none;border:0;padding:8px 2px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .bottom button svg{width:26px;height:26px}
+  .bottom button[aria-current="true"]{color:var(--fg)}
+  .bottom button[aria-current="true"] .ico-bg{fill:var(--yellow)}
+  main{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+main{padding-block:22px 48px;display:block}
+
+/* generic */
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.h-page{font-size:clamp(28px,5vw,40px);font-weight:900;letter-spacing:-.02em;margin:4px 0 6px}
+.lead{color:var(--muted);max-width:62ch;margin:0 0 18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;font-family:var(--f-display);font-weight:800;font-size:16px;cursor:pointer;background:var(--btn);color:var(--on-btn);min-height:48px;text-decoration:none}
+.btn.y{background:var(--yellow);color:var(--on-yellow)}
+.btn.ghost{background:transparent;color:var(--fg);border:1.5px solid var(--line)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.section{margin-top:30px}
+.section > h2{font-size:22px;font-weight:800;margin-bottom:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin:0 -2px 14px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.meter{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;background:var(--ok);border-radius:99px;transition:width .6s}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+/* home */
+.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center}
+.hero h1{font-size:clamp(32px,6vw,54px);font-weight:900;letter-spacing:-.03em}
+.hero h1 em{font-style:normal;background:var(--yellow);color:var(--on-yellow);padding:0 .15em;border-radius:6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.hero p{color:var(--muted);font-size:17px;max-width:46ch}
+.hero-scene{border-radius:18px;overflow:hidden;aspect-ratio:1/1;max-width:100%;max-height:340px;justify-self:center;width:100%;box-shadow:var(--shadow)}
+.hero-scene svg{width:100%;height:100%;display:block}
+@media (max-width:760px){.hero{grid-template-columns:1fr}.hero-scene{max-height:260px;max-width:260px}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{padding:14px 16px}
+.stat b{display:block;font-family:var(--f-display);font-size:30px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat .meter{margin-top:10px}
+.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media (max-width:640px){.modes{grid-template-columns:1fr}}
+.mode{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:16px;text-align:left;cursor:pointer;width:100%}
+.mode:hover{border-color:var(--muted)}
+.mode .sg{width:64px;height:64px}
+.mode h3{font-size:19px;font-weight:800}
+.mode p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.mode .go{font-family:var(--f-display);font-weight:900;font-size:22px;color:var(--muted)}
+.daily{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:18px 20px;background:var(--asphalt);color:var(--on-asphalt);border-radius:var(--r);border:0}
+.daily h3{font-size:20px;font-weight:800}
+.daily p{margin:4px 0 0;opacity:.75;font-size:14px}
+
+/* signs */
+.sign{display:block;width:100%;height:100%;overflow:visible}
+.sg{display:inline-block}.sg-big{width:100%;height:100%}
+.sign-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px}
+.sign-tile{padding:14px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;text-align:center;position:relative}
+.sign-tile:hover{border-color:var(--muted)}
+.sign-tile .sg{width:78px;height:78px;transition:transform .25s}
+.sign-tile:hover .sg{transform:scale(1.06) rotate(-2deg)}
+.sign-tile > span:last-child{font-size:13.5px;font-weight:700;line-height:1.25;overflow-wrap:break-word;max-width:100%}
+.plate{display:flex;align-items:center;justify-content:center;background:#eef0f2;border-radius:10px;padding:6px;overflow:hidden}
+.plate img{width:100%;height:100%;object-fit:contain;display:block;-webkit-user-drag:none;user-select:none}
+.sign-tile .plate{width:96px;height:96px}
+.sign-tile .code{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin-bottom:-6px}
+.seg{display:inline-flex;background:var(--surface-2);border:1.5px solid var(--line);border-radius:12px;padding:3px;margin:4px 0 12px;gap:2px}
+.seg button{border:0;background:none;padding:8px 14px;border-radius:9px;font-weight:700;font-size:14.5px;cursor:pointer;color:var(--muted)}
+.seg button span{font-size:12px;opacity:.8;margin-left:4px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
+.vars{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.var{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:3px;cursor:pointer}
+.var .plate{width:62px;height:62px;padding:4px}
+details.full{margin:6px 0 0;font-size:14.5px;color:var(--muted)}
+details.full summary{cursor:pointer;font-weight:700;color:var(--link)}
+.sign-tile .dot{position:absolute;top:8px;right:8px;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.sign-tile .dot.l1{background:var(--yellow)}
+.sign-tile .dot.l2{background:var(--ok)}
+.cat-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.cat-head p{margin:4px 0 0;color:var(--muted);max-width:60ch;font-size:15px}
+
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,12,15,.55);animation:fade .2s}
+.sheet-in{background:var(--surface);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:22px max(20px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));max-height:90%;overflow:auto;animation:up .28s cubic-bezier(.2,.8,.2,1)}
+@media (min-width:761px){.sheet{align-items:center}.sheet-in{border-radius:20px}}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.sheet .big{width:160px;height:160px;margin:4px auto 14px}
+.sheet h2{font-size:24px;font-weight:900;text-align:center}
+.sheet .cat{text-align:center;margin-top:4px}
+.sheet p{max-width:60ch}
+.tip{display:flex;gap:10px;background:var(--surface-2);border-radius:12px;padding:12px 14px;margin:12px 0;font-size:15px}
+.tip b{font-family:var(--f-display)}
+
+/* rules */
+.topic-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.topic{display:grid;grid-template-columns:52px 1fr;gap:14px;align-items:center;padding:14px 16px;cursor:pointer;text-align:left;width:100%}
+.topic .sg{width:52px;height:52px}
+.topic h3{font-size:17px;font-weight:800}
+.topic .meter{margin-top:8px}
+.topic small{color:var(--muted);font-size:13px}
+.lesson{display:grid;gap:12px;max-width:760px}
+.lcard{padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
+.lcard h3{font-size:18px;font-weight:800;margin-bottom:4px}
+.lcard p{margin:0;color:var(--fg)}
+.lcard .sg{width:64px;height:64px}
+.facts{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 16px}
+.fact{background:var(--yellow);color:var(--on-yellow);border-radius:12px;padding:8px 14px;min-width:96px}
+.fact b{display:block;font-family:var(--f-display);font-weight:900;font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.fact span{font-size:12.5px;font-weight:700}
+.back{background:none;border:0;padding:6px 0;font-weight:700;color:var(--muted);cursor:pointer;font-size:15px}
+.stop-demo{padding:16px 18px}
+.stop-demo input{width:100%;accent-color:var(--fg)}
+.sd-bars{display:grid;gap:6px;margin-top:12px}
+.sd-bar{display:flex;height:30px;border-radius:8px;overflow:hidden;background:var(--surface-2);font-size:12.5px;font-weight:700}
+.sd-bar i{display:flex;align-items:center;padding-left:8px;white-space:nowrap;font-style:normal;transition:width .3s}
+.sd-r{background:var(--yellow);color:var(--on-yellow)}
+.sd-b{background:var(--bad);color:#fff}
+.sd-row{display:grid;grid-template-columns:68px 1fr;gap:8px;align-items:center;font-size:13px;font-weight:700}
+.sd-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;margin-top:8px}
+
+/* scenarios */
+.scen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.scen-tile{padding:10px;cursor:pointer;text-align:left;width:100%}
+.scen-tile .mini{border-radius:10px;overflow:hidden;aspect-ratio:1/1;max-width:100%}
+.scen-tile .mini svg{width:100%;height:100%;display:block}
+.scen-tile h3{font-size:16px;font-weight:800;margin:10px 4px 2px}
+.scen-tile small{margin:0 4px;color:var(--muted)}
+.scene .grass{fill:var(--grass)}
+.scene .grass2{fill:var(--grass-2)}
+.scene .road{fill:var(--road)}
+.scene .walk{fill:var(--walk)}
+.scene .lot{fill:var(--lot)}
+.scene .mk{fill:#fff}
+.scene .dash{stroke:#fff;stroke-width:2.5;stroke-dasharray:10 12;fill:none}
+.blink{animation:blink .7s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.badge circle{fill:var(--yellow);stroke:#111;stroke-width:2}
+.badge text{font-family:var(--f-display);font-weight:900;font-size:13px;fill:#111}
+.badge{animation:pop .35s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{from{transform:scale(0)}}
+
+/* session */
+.session{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;overscroll-behavior:contain}
+.ses-in{max-width:720px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.ses-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.ses-top .x{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-size:18px;flex:none}
+.ses-title{font-family:var(--f-display);font-weight:800;font-size:17px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ses-count{font-family:var(--f-mono);font-weight:700;font-size:14px;color:var(--muted)}
+.timer{font-family:var(--f-mono);font-weight:700;font-size:14px;background:var(--surface);border:1.5px solid var(--line);border-radius:99px;padding:4px 10px}
+.timer.low{color:var(--bad);border-color:var(--bad)}
+.progress{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-bottom:18px}
+.progress i{display:block;height:100%;background:var(--yellow);transition:width .35s}
+.q-vis{display:flex;justify-content:center;margin:6px 0 14px}
+.q-sign{width:min(190px,48vw);height:min(190px,48vw);animation:signIn .45s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes signIn{from{transform:scale(.6) rotate(-8deg);opacity:0}}
+.q-scene{width:100%;max-width:420px;border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.q-scene svg{display:block;width:100%;height:auto}
+.q-prompt{font-family:var(--f-display);font-size:clamp(20px,4.4vw,25px);font-weight:800;line-height:1.25;margin:0 0 16px;text-wrap:balance}
+.opts{display:grid;gap:10px}
+.opts.grid{grid-template-columns:repeat(2,1fr)}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;padding:14px 16px;min-height:56px;border-radius:14px;border:2px solid var(--line);background:var(--surface);cursor:pointer;font-size:16.5px;font-weight:700;line-height:1.3;transition:border-color .15s,background .15s,transform .1s}
+.opt:hover:not([disabled]){border-color:var(--muted)}
+.opt .k{flex:none;width:28px;height:28px;border-radius:8px;background:var(--surface-2);display:grid;place-items:center;font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.opt .cdot{flex:none;width:18px;height:18px;border-radius:50%;border:2px solid rgba(0,0,0,.25)}
+.opts.grid .opt{justify-content:center;padding:14px;flex-direction:column}
+.opts.grid .opt .sg{width:min(110px,30vw);height:min(110px,30vw)}
+.opts.grid .opt .k{position:absolute;margin:-6px 0 0 -6px}
+.opt.sel{border-color:var(--fg);background:var(--surface-2)}
+.opt.ok{border-color:var(--ok);background:var(--ok-bg)}
+.opt.bad{border-color:var(--bad);background:var(--bad-bg);animation:shake .35s}
+.opt[disabled]{cursor:default}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.fb{margin-top:16px;padding:16px 18px;border-radius:14px;border:2px solid;animation:up .3s}
+.fb.ok{border-color:var(--ok);background:var(--ok-bg)}
+.fb.bad{border-color:var(--bad);background:var(--bad-bg)}
+.fb h3{font-size:19px;font-weight:900;margin-bottom:4px}
+.fb.ok h3{color:var(--ok)}
+.fb.bad h3{color:var(--bad)}
+.fb p{margin:4px 0 0}
+.ses-actions{display:flex;gap:10px;justify-content:space-between;margin-top:18px;flex-wrap:wrap}
+.ses-actions .btn{flex:1;min-width:140px}
+.result{text-align:center;padding:10px 0 4px}
+.result .score{font-family:var(--f-display);font-weight:900;font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
+.result h2{font-size:28px;font-weight:900;margin:10px 0 4px}
+.pass{display:inline-block;margin-top:10px;padding:6px 14px;border-radius:99px;font-weight:800;font-family:var(--f-display)}
+.pass.ok{background:var(--ok-bg);color:var(--ok)}
+.pass.bad{background:var(--bad-bg);color:var(--bad)}
+.review{display:grid;gap:10px;margin-top:22px;text-align:left}
+.rv{padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+.rv .sg{width:56px;height:56px}
+.rv h4{margin:0 0 4px;font-size:15.5px}
+.rv p{margin:2px 0 0;font-size:14.5px}
+.rv .yours{color:var(--bad)}
+.rv .right{color:var(--ok);font-weight:700}
+
+/* flashcards */
+.flash{perspective:1200px;max-width:380px;margin:6px auto 0;aspect-ratio:3/4;max-height:62vh;width:100%;cursor:pointer}
+.flash-in{position:relative;width:100%;height:100%;transition:transform .55s cubic-bezier(.3,.9,.3,1);transform-style:preserve-3d}
+.flash.flip .flash-in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center;gap:12px}
+.face.back-f{transform:rotateY(180deg);overflow:auto;justify-content:flex-start}
+.face .sg{width:62%;aspect-ratio:1/1}
+.face.back-f .sg{width:130px;height:130px;flex:none}
+.face h3{font-size:22px;font-weight:900}
+.face p{margin:0;font-size:15px}
+.hint{font-size:13px;color:var(--muted)}
+
+.foot{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+.linkbtn{background:none;border:0;padding:0;color:var(--link);cursor:pointer;font-size:13.5px;text-decoration:underline}
+.examcard{padding:18px 20px;display:grid;gap:10px}
+.examcard h3{font-size:20px;font-weight:800}
+.examcard ul{margin:0;padding-left:18px}
+.hist{display:grid;gap:6px;margin-top:8px}
+.hist div{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums;font-size:14.5px;border-bottom:1px dashed var(--line);padding:6px 0}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+
+<div id="app">
+  <header class="top">
+    <div class="wrap top-in">
+      <button class="brand" data-nav="home" aria-label="Till startsidan">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 5 L97 89 Q98 93 94 93 L6 93 Q2 93 3 89 Z" fill="#d3241b"/><path d="M50 22 L84 83 L16 83 Z" fill="#ffd21f"/><path d="M42 80 L42 60 Q42 48 54 46" stroke="#111" stroke-width="7" fill="none"/><path d="M50 38 L64 45 L52 54 Z" fill="#111"/></svg>
+        <span><b>Trafikspel</b><small>Teori för B-körkort</small></span>
+      </button>
+      <nav class="tabs-top" id="tabsTop" aria-label="Avdelningar"></nav>
+    </div>
+    <div class="lane" aria-hidden="true"></div>
+  </header>
+  <main id="main" class="wrap"></main>
+  <nav class="bottom" id="tabsBottom" aria-label="Avdelningar"></nav>
+</div>
+<div id="session" class="session" hidden></div>
+<div id="sheet" class="sheet" hidden></div>
+
+<script src="marken.js"></script>
+<script>
+/* ============================================================
+   VÄGMÄRKEN – officiella bilder och texter (Transportstyrelsen), laddas från marken.js
+   ============================================================ */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const TSD = window.TS_DATA || {items:[]};
+const ITEMS = TSD.items;
+const ITEM = Object.fromEntries(ITEMS.map(i=>[i.id,i]));
+const MAIN_BY_CODE = {}; ITEMS.forEach(i=>{ if(i.main) MAIN_BY_CODE[i.code]=i.id; });
+const OLD = {a_kurva:'A1',a_kurvor:'A2',a_ned:'A3',a_upp:'A4',a_smal:'A5',a_farthinder:'A9',a_ojamn:'A8',a_slirig:'A10',a_overgang:'A13',a_gaende:'A14',a_barn:'A15',a_cykel:'A16',a_alg:'a19-1',a_radjur:'a19-2',a_vagarbete:'A20',a_signal:'A22',a_korsning:'A28',a_korsningH:'A29',a_cirkulation:'A30',a_motande:'A25',a_bommar:'A35',a_tag:'A36',a_kryss:'A39',a_flyg:'A23',a_fara:'A40',
+ b_vaj:'B1',b_stopp:'B2',b_huvud:'B4',b_huvudslut:'B5',b_motande:'B6',b_motandeVaj:'B7',b_overgang:'B3',b_cykeloverfart:'B8',
+ c_fordon:'C2',c_motor:'C3',c_infart:'C1',c_vanster:'c25-1',c_hoger:'c25-2',c_uturn:'C26',c_omkorning:'C27',c_omkslut:'C28',c_30:'c31-3',c_50:'c31-5',c_70:'c31-7',c_lastbil:'C7',c_gang:'C15',c_cykel:'C10',c_hojd:'C17',c_park:'C35',c_stannaPark:'C39',
+ d_rakt:'d1-3',d_hoger:'d1-5',d_haller:'d2-1',d_cirk:'D3',d_gang:'D5',d_cykel:'D4',d_gangcykel:'D6',d_separ:'D7',
+ e_motorvag:'E1',e_motorvagSlut:'E2',e_motortrafikled:'E3',e_tatt:'E5',e_tattSlut:'E6',e_gagata:'E7',e_gangfart:'E9',e_park:'E19',e_atervand:'E17',e_motesplats:'E18',e_enkel:'E16',e_buss:'D10',
+ m_mitt:'M1',m_varn:'M3',m_held:'M8',m_stopp:'M13',m_vaj:'M14',m_zebra:'M15',m_gulStreck:'M22',m_gulHeld:'M21',m_sparr:'M9'};
+function rid(x){ if(!x) return null; if(ITEM[x]) return x; const o=OLD[x]||x; return ITEM[o]?o:(MAIN_BY_CODE[o]||null); }
+
+// Pedagogiska tips (egna formuleringar) – kompletterar Transportstyrelsens text
+const TIPS = {
+ A1:'Bromsa före kurvan, inte i den. Håll dig på din sida.',A2:'Sänk farten och var beredd på mötande som tar kurvorna snävt.',
+ A3:'Välj en lägre växel och använd motorbromsen, så att bromsarna inte överhettas.',A4:'Sikten över backkrönet är skymd – kör inte om nära krönet.',
+ A5:'Sänk farten och var beredd på att släppa fram mötande.',A8:'Sänk farten för att behålla kontrollen över bilen.',A9:'Anpassa farten innan du når hindret.',
+ A10:'Kör mjukt: undvik hastiga inbromsningar och ryck i ratten.',A13:'Var beredd att lämna gående företräde.',A14:'Sänk farten och håll avstånd i sidled.',
+ A15:'Barn är svåra att förutse. Var beredd att stanna.',A16:'Kontrollera döda vinkeln, särskilt när du svänger höger.',
+ A19:'Störst risk i gryning och skymning. Ser du ett djur – räkna med att fler följer efter.',
+ 'a19-1':'Störst risk i gryning och skymning. Sänk farten och spana långt fram och längs dikeskanterna.',
+ A20:'Följ den tillfälliga skyltningen – den gäller före den vanliga.',A22:'Var beredd att stanna om signalen slår om.',
+ A25:'Håll till höger – det kommer mötande.',A28:'En korsning där högerregeln gäller: du har väjningsplikt mot fordon från höger.',
+ A29:'Du har företräde, men var beredd på att någon kör ut ändå.',A30:'Välj körfält i god tid och sänk farten.',
+ A35:'Lita inte blint på bommarna – titta åt båda håll.',A36:'Sakta in och kontrollera noga att inget tåg kommer.',A39:'Stanna före märket om ett tåg kommer.',
+ A40:'Läs tilläggstavlan och sänk farten.',
+ B1:'Sänk farten i god tid så att andra ser att du väjer. Stanna om det behövs.',
+ B2:'Stanna helt – även om vägen är tom. Att inte stanna kan leda till indraget körkort.',
+ B3:'Du får inte stanna eller parkera på övergångsstället eller inom 10 meter före det.',B4:'Du får inte parkera på en huvudled.',
+ B5:'Märket sitter före slutet – var beredd att väja.',B6:'Vänta före det smala partiet tills mötande har passerat.',
+ B7:'Kör vidare, men se upp för mötande som inte väjer.',B8:'Sänk farten – cyklister kommer ofta snabbt.',
+ C1:'Du får inte heller backa in.',C2:'Gäller även cykel. Tilläggstavlor kan ge undantag.',
+ C25:'Märket förbjuder inte U-sväng – det har ett eget märke.',C26:'Vänstersväng är fortfarande tillåten.',
+ C27:'Förbudet gäller tills ett slutmärke kommer. Mopeder och motorcyklar utan sidvagn får du köra om.',
+ C28:'Kör om bara när det är säkert – sikt och avstånd avgör.',
+ C31:'Siffran är en högsta gräns, inte en rekommendation. Anpassa alltid farten efter väglag och sikt.',
+ C17:'Tänk på takbox eller cyklar på taket.',C35:'Gäller på den sida av vägen där märket sitter. Du får stanna för av- och påstigning.',
+ C39:'Inte ens en snabb avsläppning är okej här.',
+ D1:'Påbudsmärken är blå och runda. De talar om vad du måste göra.',D2:'Sitter ofta på refuger och trafiköar.',
+ D3:'Blinka höger när du ska lämna cirkulationsplatsen.',D4:'Bilar får inte köra eller parkera här.',D6:'Symbolerna ovanför varandra = gemensam bana.',
+ D7:'Lodrätt streck = uppdelad bana.',D10:'Du får korsa körfältet för att svänga, men inte köra i det.',
+ E1:'Du får inte vända, backa eller stanna i onödan på motorväg.',E2:'Kontrollera vilken hastighet som gäller efter slutet.',
+ E3:'Kör inte om där sikten är dålig – det kan komma mötande.',E5:'Om inget annat är skyltat gäller 50 km/h.',E6:'Om inget annat är skyltat gäller nu 70 km/h.',
+ E7:'Du får bara köra här om det behövs, i gångfart, och du har väjningsplikt mot gående.',E9:'Kör i gångfart och väj för gående. Parkera bara på markerade platser.',
+ E16:'På enkelriktad gata får du parkera på båda sidor, om inget annat anges.',E17:'Du måste vända och köra tillbaka samma väg.',
+ E18:'Du får inte parkera på en mötesplats.',
+ E19:'Svarta siffror = vardagar, siffror inom parentes = lördagar (dag före helgdag), röda siffror = sön- och helgdagar.',
+ M1:'Du får korsa linjen, till exempel för att köra om, när det är säkert.',M3:'Korsa linjen bara om du ser att det är helt säkert.',
+ M8:'En heldragen linje får inte korsas.',M13:'Stanna med fordonets front före linjen.',M14:'Trianglarnas spetsar pekar mot den som har väjningsplikt.',
+ M15:'Du får inte köra om omedelbart före eller på ett obevakat övergångsställe.',M21:'Gul heldragen = stanna och parkera förbjudet.',
+ M22:'Gul streckad = parkera förbjudet.',M9:'Du får inte köra på eller över området.',
+ T6:'Svarta siffror = vardagar, inom parentes = dag före sön- och helgdag, röda = sön- och helgdagar.',
+ SIG4:'Fast gult betyder stopp, om du kan stanna utan fara.',SIG5:'Följ vägmärkena och de vanliga väjningsreglerna.',
+};
+const tipFor = it => TIPS[it.id]||TIPS[it.code]||'';
+
+const CATS = [
+ {id:'A',name:'Varningsmärken',short:'Varning',desc:'Gula trianglar med röd kant. De varnar för en fara längre fram – oftast 150–250 meter före faran utanför tätort.',icon:'A40'},
+ {id:'B',name:'Väjningspliktsmärken',short:'Väjning',desc:'Talar om vem som ska släppa fram vem: väjningsplikt, stopplikt, huvudled, övergångsställe och cykelöverfart.',icon:'B1'},
+ {id:'C',name:'Förbudsmärken',short:'Förbud',desc:'Runda, gula med röd kant. De talar om vad du inte får göra. Parkeringsförbud har blå botten.',icon:'c31-5'},
+ {id:'D',name:'Påbudsmärken',short:'Påbud',desc:'Runda och blå. De talar om vad du måste göra eller vilken bana som gäller.',icon:'D3'},
+ {id:'E',name:'Anvisningsmärken',short:'Anvisning',desc:'Fyrkantiga, oftast blå. De ger information om vägen och vad som gäller där. Motorväg och motortrafikled har grön botten.',icon:'E19'},
+ {id:'F',name:'Lokaliseringsmärken för vägvisning',short:'Vägvisning',desc:'Orienteringstavlor, vägvisare, vägnummer och tavlor som visar hur körfälten är indelade.',icon:'F14'},
+ {id:'G',name:'Service, turism och upplysning',short:'Service',desc:'Lokaliseringsmärken för allmänna inrättningar, service och turistmål, samt upplysningsmärken.',icon:'H3'},
+ {id:'M',name:'Vägmarkeringar',short:'Markeringar',desc:'Linjer och symboler målade på vägen. De har samma tyngd som vägmärken.',icon:'M14'},
+ {id:'T',name:'Tilläggstavlor',short:'Tilläggstavlor',desc:'Sitter under ett vägmärke och preciserar vad märket gäller – till exempel tid, avstånd, riktning eller fordonsslag.',icon:'T6'},
+ {id:'S',name:'Trafiksignaler',short:'Signaler',desc:'Trafiksignaler samt signaler och bommar vid korsning med järnväg eller spårväg.',icon:'SIG3'},
+ {id:'P',name:'Tecken av polis och vakt',short:'Polis & vakt',desc:'Tecken som polis och vakter ger. De gäller före trafiksignaler och vägmärken.',icon:'P1'},
+ {id:'X',name:'Andra anordningar',short:'Anordningar',desc:'Markeringspilar, skärmar, bommar och andra anordningar som visar hur trafiken ska gå.',icon:'X1'},
+];
+const CAT = Object.fromEntries(CATS.map(c=>[c.id,c]));
+const ALLCAT = {id:'all',name:'Alla vägmärken',short:'Alla',desc:'Blandat från alla kategorier.'};
+
+function dataToURL(d){ try{ const i=d.indexOf(','); const mime=d.slice(5,d.indexOf(';')); const bin=atob(d.slice(i+1)); const u=new Uint8Array(bin.length); for(let k=0;k<bin.length;k++) u[k]=bin.charCodeAt(k); return URL.createObjectURL(new Blob([u],{type:mime})); }catch(e){ return d; } }
+const srcOf = it => it._u || (it._u = dataToURL(it.img));
+function signSVG(x, cls='sg'){ const id=rid(x); if(!id) return '<span class="'+cls+'"></span>'; const it=ITEM[id]; return `<span class="${cls} plate"><img src="${srcOf(it)}" alt="${esc(it.name)}" draggable="false"></span>`; }
+function sceneSign(x,cx,cy,size){ const id=rid(x); if(!id) return ''; return `<image href="${srcOf(ITEM[id])}" x="${cx-size/2}" y="${cy-size/2}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`; }
+function shortDesc(t,min=170){ const parts=t.match(/[^.!?]+[.!?]+(\s|$)/g)||[t]; let s=''; for(const p of parts){ s+=p; if(s.length>=min) break; } return s.trim(); }
+let SCOPE='common'; try{ SCOPE=localStorage.getItem('trafikspel.scope')||'common'; }catch(e){}
+const inScope = it => SCOPE==='all' || it.common;
+const scopeItems = () => ITEMS.filter(inScope);
+const signKeys = list => list.flatMap(i=>['sn:'+i.id,'ns:'+i.id]);
+
+
+/* ============================================================
+   TRAFIKREGLER – lektioner och frågor
+   ============================================================ */
+const TOPICS = [
+ {id:'vaj',title:'Väjningsplikt & korsningar',icon:'b_vaj',sub:'Högerregeln, stopplikt, huvudled och utfarter',
+  lesson:[
+   {h:'Högerregeln',p:'I en korsning utan vägmärken eller signaler har du väjningsplikt mot fordon som kommer från höger. Det gäller även om du ska köra rakt fram.',sign:'a_korsning'},
+   {h:'Så väjer du',p:'Visa i god tid att du tänker väja genom att sänka farten. Stanna om det behövs. Den du väjer för ska inte behöva ändra fart eller riktning.',sign:'b_vaj'},
+   {h:'Stopplikt',p:'Stanna helt vid stopplinjen, även om vägen är tom. Finns ingen linje stannar du där du har god sikt. Därefter har du väjningsplikt mot alla på den korsande vägen.',sign:'b_stopp'},
+   {h:'Vänstersväng',p:'Svänger du vänster har du väjningsplikt mot mötande som kör rakt fram eller svänger höger. Det gäller även på en huvudled.'},
+   {h:'Utfartsregeln',p:'Kör du ut från en parkeringsplats, gårdsplats, bensinstation, cykelbana eller från terräng har du väjningsplikt mot alla på vägen – även mot gående och cyklister.'},
+   {h:'Huvudled',p:'På en huvudled har trafiken från anslutande vägar väjningsplikt eller stopplikt mot dig. Du får inte parkera på en huvudled.',sign:'b_huvud'},
+   {h:'Cirkulationsplats',p:'Vid infarten finns oftast väjningsplikt. Du väjer då för den som redan kör i cirkulationsplatsen. Blinka höger när du ska köra ut.',sign:'d_cirk'},
+   {h:'Utryckningsfordon',p:'Ett fordon med blåljus och siren ska få fri väg. Sakta in och kör åt sidan – men gör det utan att skapa nya faror.'},
+  ]},
+ {id:'fart',title:'Hastighet & avstånd',icon:'c_70',sub:'Bashastighet, stoppsträcka och tidsavstånd',
+  facts:[['50','km/h i tättbebyggt område'],['70','km/h utanför'],['80','km/h med släpvagn'],['3 s','avstånd till bilen framför']],
+  demo:'stop',
+  lesson:[
+   {h:'Bashastighet',p:'Om inget annat är skyltat gäller 50 km/h inom tättbebyggt område och 70 km/h utanför. Den högsta hastighet som kan skyltas i Sverige är 120 km/h.',sign:'e_tatt'},
+   {h:'Släpvagn',p:'Med en personbil som drar släpvagn får du köra högst 80 km/h, även om skylten visar mer.'},
+   {h:'Anpassa farten',p:'Hastighetsgränsen är den högsta tillåtna farten. Du ska alltid kunna stanna på den sträcka du ser framför dig – i mörker, dimma och halka betyder det betydligt lägre fart.'},
+   {h:'Stoppsträcka',p:'Stoppsträcka = reaktionssträcka + bromssträcka. Om farten fördubblas blir bromssträckan ungefär fyra gånger så lång. Prova reglaget ovanför.'},
+   {h:'Tidsavstånd',p:'Håll minst tre sekunder till fordonet framför när väglaget är bra. Räkna från att bilen framför passerar en punkt tills du själv passerar samma punkt. Öka avståndet vid regn och halka.'},
+   {h:'Skolbuss',p:'När en skolbuss har stannat och visar att barn går av eller på får du passera i högst 30 km/h.'},
+  ]},
+ {id:'omk',title:'Omkörning & körfält',icon:'c_omkorning',sub:'Linjer, körfältsbyte och när du inte får köra om',
+  lesson:[
+   {h:'Kör om till vänster',p:'Omkörning sker normalt till vänster. Till höger får du köra om ett fordon som tydligt svänger vänster, eller när det finns flera körfält i samma riktning.'},
+   {h:'Före omkörningen',p:'Kontrollera att det är fritt framåt och bakåt, titta i speglarna och över axeln (döda vinkeln) och blinka i god tid.'},
+   {h:'Här får du inte köra om',p:'Omedelbart före eller på ett obevakat övergångsställe, nära backkrön och i kurvor med skymd sikt, i korsningar och vid plankorsningar.',sign:'m_zebra'},
+   {h:'Linjerna på vägen',p:'Mittlinje (korta streck) får korsas. Varningslinje (långa streck) varnar för fara – korsa bara om det är helt säkert. Heldragen linje får inte korsas.',sign:'m_varn'},
+   {h:'Byta körfält',p:'Den som byter körfält ska lämna företräde åt fordon i det andra körfältet. Blinka, kontrollera speglar och döda vinkeln.'},
+   {h:'När du blir omkörd',p:'Håll till höger och öka inte farten. Underlätta för den som kör om.'},
+  ]},
+ {id:'gang',title:'Gående & cyklister',icon:'b_overgang',sub:'Övergångsställen, cykelöverfarter och oskyddade trafikanter',
+  lesson:[
+   {h:'Obevakat övergångsställe',p:'Du har väjningsplikt mot gående som är ute på eller ska gå ut på ett obevakat övergångsställe (utan trafiksignal eller polis). Anpassa farten i god tid.',sign:'b_overgang'},
+   {h:'Skymd sikt',p:'Har ett fordon stannat före ett övergångsställe kan en gående vara skymd. Sakta in och var beredd att stanna.'},
+   {h:'Cykelöverfart',p:'Vid en cykelöverfart har du väjningsplikt mot cyklister och mopedförare som är på eller ska ut på överfarten.',sign:'b_cykeloverfart'},
+   {h:'Cykelpassage',p:'Vid en cykelpassage har du ingen väjningsplikt – cyklisten ska väja för dig. Du ska ändå anpassa farten så att det inte blir farligt.'},
+   {h:'Sväng vid grönt',p:'När du svänger i en korsning med signaler kan gående och cyklister ha grönt samtidigt. Du har väjningsplikt mot dem.'},
+   {h:'Gågata och gångfartsområde',p:'Här kör du i gångfart och har väjningsplikt mot gående.',sign:'e_gangfart'},
+  ]},
+ {id:'park',title:'Stanna & parkera',icon:'c_park',sub:'Avstånd, gula linjer och tilläggstavlor',
+  facts:[['10 m','före övergångsställe'],['10 m','från korsning'],['24 h','samma plats på vardagar']],
+  lesson:[
+   {h:'Stanna eller parkera?',p:'Att stanna är ett kort uppehåll för att släppa av eller på passagerare eller lasta. Allt annat räknas som att parkera.'},
+   {h:'Höger sida',p:'Du ska stanna och parkera på höger sida i färdriktningen. På en enkelriktad gata får du använda båda sidorna.'},
+   {h:'Här får du inte stanna eller parkera',p:'På eller inom 10 meter före ett övergångsställe, i en korsning eller inom 10 meter från en korsande körbana, i tunnlar och där du skymmer sikten eller ett vägmärke.',sign:'c_stannaPark'},
+   {h:'Här får du inte parkera',p:'På huvudled, framför in- och utfarter, på mötesplatser och längre än 24 timmar på samma plats på vardagar.',sign:'c_park'},
+   {h:'Gula linjer',p:'Gul streckad linje vid kanten = förbud att parkera. Gul heldragen linje = förbud att stanna och parkera.',sign:'m_gulStreck'},
+   {h:'Tider på tilläggstavlor',p:'Svarta siffror gäller vardagar, siffror inom parentes gäller lördagar och dagar före helgdag, och röda siffror gäller sön- och helgdagar.',sign:'e_park'},
+  ]},
+ {id:'motor',title:'Motorväg & motortrafikled',icon:'e_motorvag',sub:'Påfarter, förbud och nödstopp',
+  lesson:[
+   {h:'Vem får köra här?',p:'Bara fordon som får och kan köra minst 40 km/h. Gående, cyklister och mopedförare får inte vara på motorvägen.',sign:'e_motorvag'},
+   {h:'Påfarten',p:'Använd accelerationsfältet för att komma upp i samma fart som trafiken på motorvägen. Du ska lämna företräde åt dem som redan kör där.'},
+   {h:'Förbjudet',p:'Du får inte vända, backa eller köra över mittremsan. Du får inte stanna eller parkera annat än på särskilda platser.'},
+   {h:'Missad avfart',p:'Kör vidare till nästa avfart. Backa aldrig.'},
+   {h:'Motorstopp',p:'Sätt på varningsblinkers, försök komma så långt ut på vägrenen som möjligt, ta på reflexväst, placera varningstriangeln en bra bit bakom bilen och ställ dig bakom vägräcket.'},
+   {h:'Motortrafikled',p:'I stort sett samma regler som motorväg, men det kan finnas mötande trafik och kortare på- och avfarter.',sign:'e_motortrafikled'},
+  ]},
+ {id:'vinter',title:'Väglag, däck & belysning',icon:'a_slirig',sub:'Vinterdäck, mönsterdjup, halka och ljus',
+  facts:[['3 mm','mönsterdjup vinterdäck'],['1,6 mm','mönsterdjup sommardäck'],['1/12–31/3','krav på vinterdäck vid vinterväglag']],
+  lesson:[
+   {h:'Vinterdäck',p:'Mellan 1 december och 31 mars måste du ha vinterdäck när det är vinterväglag. Dubbdäck får användas 1 oktober–15 april, och annars när det är vinterväglag.'},
+   {h:'Mönsterdjup',p:'Vinterdäck ska ha minst 3 mm mönsterdjup under vinterperioden. Sommardäck ska ha minst 1,6 mm.'},
+   {h:'Halka',p:'Risken är störst när temperaturen ligger runt noll grader och på broar, som fryser först. Kör mjukt och öka avståndet.',sign:'a_slirig'},
+   {h:'Vattenplaning',p:'Om bilen börjar flyta på vatten: släpp gasen, håll ratten stilla och bromsa inte hårt förrän du har kontakt med vägen igen.'},
+   {h:'Belysning',p:'Du ska alltid ha halvljus eller varselljus tänt när du kör. I mörker använder du halvljus eller helljus.'},
+   {h:'Helljus vid möte',p:'Blända av i god tid när du möter någon eller kör bakom någon. Bländ inte av för sent – och titta mot högerkanten om du blir bländad.'},
+  ]},
+ {id:'alko',title:'Alkohol, trötthet & mobil',icon:'a_fara',sub:'Promillegränser och uppmärksamhet',
+  facts:[['0,2 ‰','rattfylleri'],['1,0 ‰','grovt rattfylleri']],
+  lesson:[
+   {h:'Promillegränser',p:'Har du 0,2 promille alkohol i blodet eller mer räknas det som rattfylleri. Vid 1,0 promille eller mer räknas det som grovt rattfylleri.'},
+   {h:'Bara tiden hjälper',p:'Kroppen förbränner alkohol i en jämn takt. Kaffe, kall dusch eller mat gör inte att du blir nykter snabbare. Tänk på dagen efter.'},
+   {h:'Narkotika och läkemedel',p:'Det är förbjudet att köra med narkotika i blodet. Läkemedel med röd varningstriangel på förpackningen kan påverka din förmåga att köra.'},
+   {h:'Trötthet',p:'Trötthet är lika farligt som alkohol. Känner du dig trött: stanna på en säker plats och vila eller sov en stund. Öppna fönster och musik hjälper inte.'},
+   {h:'Mobiltelefon',p:'Du får inte hålla mobilen i handen när du kör. Använd handsfree – och undvik samtal när trafiken kräver full uppmärksamhet.'},
+  ]},
+ {id:'saker',title:'Säkerhet, olyckor & vilt',icon:'a_alg',sub:'Bälte, barn i bil, olycksplats och viltolyckor',
+  lesson:[
+   {h:'Bilbälte',p:'Alla i bilen ska använda bälte. Föraren ansvarar för att passagerare under 15 år är fastspända.'},
+   {h:'Barn i bil',p:'Barn under 135 cm ska sitta i bilbarnstol eller på bälteskudde. En bakåtvänd bilbarnstol får aldrig sitta framför en aktiverad airbag.'},
+   {h:'Vid en olycka',p:'Varna och skydda först: varningsblinkers, reflexväst och varningstriangel. Larma 112. Ge sedan första hjälpen.'},
+   {h:'Varningstriangel',p:'Placera den en bra bit bakom bilen – minst 50–100 meter på en vanlig väg, längre där det går fort – så att andra hinner reagera.'},
+   {h:'Viltolycka',p:'Har du kört på älg, rådjur, hjort, vildsvin eller något annat större vilt måste du markera platsen och ringa 112 för att anmäla det.',sign:'a_alg'},
+   {h:'Djur på vägen',p:'Bromsa så mycket du kan och försök styra bakom djuret, alltså åt det håll det kom ifrån. Att väja kraftigt i hög fart kan vara farligare än att köra på.'},
+  ]},
+];
+const TOPIC = Object.fromEntries(TOPICS.map(t=>[t.id,t]));
+
+// Frågor: a[0] är rätt svar
+const RULES = [
+ // väjning
+ ['vaj1','vaj','Du kommer till en korsning utan vägmärken. En bil kommer från höger. Vad gäller?',['Du har väjningsplikt mot bilen från höger','Den som kommer först till korsningen kör först','Den som kör rakt fram har alltid företräde','Den som kör på den bredaste vägen har företräde'],'Högerregeln: i en korsning utan vägmärken väjer du för fordon från höger.','a_korsning'],
+ ['vaj2','vaj','Du ska svänga vänster i en korsning. En mötande bil kör rakt fram. Vem kör först?',['Den mötande bilen','Du, eftersom du kom först','Den som blinkar först','Du, om du redan har kört ut i korsningen'],'Den som svänger vänster har väjningsplikt mot mötande som kör rakt fram eller svänger höger.'],
+ ['vaj3','vaj','Vad innebär det att ha väjningsplikt?',['Du ska i god tid sänka farten och stanna om det behövs, så att andra kan passera utan att ändra fart eller riktning','Du måste alltid stanna helt','Du ska blinka och sedan köra före','Du ska tuta för att varna den andra föraren'],'Väjningsplikt betyder att du ska visa i god tid att du väjer och stanna om det behövs. Du måste inte stanna om det är fritt.','b_vaj'],
+ ['vaj4','vaj','Du har stopplikt och ser att det inte kommer någon trafik. Vad gör du?',['Stannar helt vid stopplinjen och kör sedan','Saktar in kraftigt och kör vidare','Kör vidare eftersom vägen är fri','Stannar bara om det finns en stopplinje'],'Vid stopplikt måste du alltid stanna helt, även om vägen är tom. Finns ingen linje stannar du där du har god sikt.','b_stopp'],
+ ['vaj5','vaj','Du kör ut från en parkeringsplats till en gata. Vem har du väjningsplikt mot?',['Alla på gatan, även gående och cyklister','Bara fordon från höger','Bara fordon från vänster','Ingen, om du blinkar i god tid'],'Utfartsregeln: från parkering, gårdsplats, bensinstation och liknande väjer du för alla på vägen.'],
+ ['vaj6','vaj','Du kör på en väg med det här märket. Vad gäller i korsningarna?',['Trafik från anslutande vägar har väjningsplikt eller stopplikt mot dig','Högerregeln gäller','Du har väjningsplikt mot all trafik','Du får inte svänga vänster'],'Märket betyder huvudled. Trafik från sidovägarna ska väja för dig.','b_huvud'],
+ ['vaj7','vaj','Ett utryckningsfordon med blåljus och siren närmar sig bakifrån. Vad gör du?',['Lämnar fri väg, till exempel genom att sakta in och köra åt sidan','Ökar farten för att komma undan','Tvärbromsar direkt där du är','Fortsätter som vanligt – det är förarens ansvar att köra förbi'],'Utryckningsfordon ska få fri väg. Gör det lugnt och utan att skapa nya faror.'],
+ ['vaj8','vaj','Vid infarten till en cirkulationsplats sitter ett väjningspliktsmärke. Vem ska du släppa fram?',['Fordon som redan kör i cirkulationsplatsen','Fordon som kommer in från höger','Ingen, den som är inne i cirkulationen ska väja för dig','Bara bussar och lastbilar'],'Väjningsplikten vid infarten gäller mot dem som redan kör i cirkulationsplatsen.','d_cirk'],
+ ['vaj9','vaj','Du svänger höger i en korsning när du har grönt ljus. Gående korsar vägen du svänger in på och har också grönt. Vad gäller?',['Du har väjningsplikt mot de gående','De gående ska vänta på dig','Den som kom först går först','Du får köra eftersom du har grönt'],'Vid sväng har du väjningsplikt mot gående och cyklister som korsar den väg du svänger in på.'],
+ ['vaj10','vaj','Du kör i tättbebyggt område på en väg med högst 50 km/h. En buss blinkar för att lämna en hållplats. Vad gör du?',['Sänker farten och stannar om det behövs för att släppa ut bussen','Kör förbi så snabbt som möjligt','Tutar för att visa att du kommer','Ingenting – bussen har väjningsplikt'],'I tättbebyggt område ska du underlätta för en buss som ska lämna hållplatsen.'],
+ ['vaj11','vaj','Trafiksignalen visar blinkande gult ljus. Vad betyder det?',['Kör med särskild försiktighet – vägmärken och vanliga väjningsregler gäller','Du måste stanna','Du har företräde mot alla','Signalen är trasig och du får köra som du vill'],'Blinkande gult betyder att signalen inte reglerar trafiken. Följ vägmärkena och de vanliga reglerna.','a_signal'],
+ ['vaj12','vaj','Signalen slår om från grönt till fast gult när du närmar dig. Vad gör du?',['Stannar, om du kan göra det utan fara','Ökar farten för att hinna','Fortsätter alltid – gult betyder kör','Stannar alltid, även med en bil tätt bakom dig'],'Fast gult betyder stopp, om det kan göras utan fara. Är du för nära för att stanna säkert kör du vidare.'],
+ // fart
+ ['fart1','fart','Vilken hastighet gäller i tättbebyggt område om inget annat är skyltat?',['50 km/h','30 km/h','40 km/h','60 km/h'],'Bashastigheten i tättbebyggt område är 50 km/h.','e_tatt'],
+ ['fart2','fart','Vilken hastighet gäller utanför tättbebyggt område om inget annat är skyltat?',['70 km/h','80 km/h','90 km/h','100 km/h'],'Bashastigheten utanför tättbebyggt område är 70 km/h.','e_tattSlut'],
+ ['fart3','fart','Du kör en personbil med släpvagn på en motorväg skyltad 110 km/h. Hur fort får du köra?',['80 km/h','90 km/h','100 km/h','110 km/h'],'Med släpvagn får en personbil köra högst 80 km/h.'],
+ ['fart4','fart','Vilken är den högsta hastighet som kan skyltas på svenska vägar?',['120 km/h','110 km/h','130 km/h','140 km/h'],'Den högsta skyltade hastigheten i Sverige är 120 km/h, på vissa motorvägar.'],
+ ['fart5','fart','Du fördubblar farten. Hur påverkas bromssträckan?',['Den blir ungefär fyra gånger så lång','Den blir dubbelt så lång','Den blir tre gånger så lång','Den påverkas inte'],'Bromssträckan ökar med kvadraten på hastigheten: dubbla farten ger ungefär fyra gånger så lång bromssträcka.'],
+ ['fart6','fart','Ungefär hur långt hinner du köra under en sekunds reaktionstid i 70 km/h?',['Cirka 20 meter','Cirka 7 meter','Cirka 35 meter','Cirka 50 meter'],'70 km/h är ungefär 19,4 meter per sekund. Tumregel: dela hastigheten med 3,6.'],
+ ['fart7','fart','Vad består stoppsträckan av?',['Reaktionssträcka plus bromssträcka','Bara bromssträckan','Bromssträckan minus reaktionssträckan','Avståndet till bilen framför'],'Stoppsträckan är den sträcka du kör från att du ser faran tills bilen står still.'],
+ ['fart8','fart','Hur stort tidsavstånd bör du minst hålla till fordonet framför vid bra väglag?',['Cirka 3 sekunder','Cirka 1 sekund','Cirka 0,5 sekunder','Det räcker med en billängd'],'Tresekundersregeln ger tid att reagera och bromsa. Öka avståndet vid dåligt väglag.'],
+ ['fart9','fart','Skylten visar 70 km/h men det är tät dimma. Hur fort ska du köra?',['Så att du kan stanna på den sträcka du kan se','70 km/h, eftersom det är tillåtet','Minst 50 km/h för att inte bli påkörd','Lika fort som bilen framför'],'Hastighetsgränsen är den högsta tillåtna. Du ska alltid anpassa farten efter sikt och väglag.','c_70'],
+ ['fart10','fart','En skolbuss har stannat och visar att barn kliver av. Hur fort får du köra förbi?',['Högst 30 km/h','Högst 50 km/h','Högst 20 km/h','Du måste stanna helt tills bussen kör'],'När en skolbuss har stannat för av- eller påstigning får du passera i högst 30 km/h.'],
+ ['fart11','fart','Vilken hastighet gäller i ett gångfartsområde?',['Gångfart','30 km/h','20 km/h','50 km/h'],'I gångfartsområde och på gågata får fordon köras i högst gångfart.','e_gangfart'],
+ // omk
+ ['omk1','omk','På vilken sida kör du normalt om ett annat fordon?',['Vänster sida','Höger sida','Den sida där det är mest plats','Valfri sida'],'Omkörning sker normalt till vänster.'],
+ ['omk2','omk','När får du köra om till höger på en vanlig väg med ett körfält i varje riktning?',['När fordonet framför tydligt svänger vänster','Aldrig','När fordonet framför kör långsamt','När du har bråttom och det finns vägren'],'Du får köra om till höger när fordonet framför har placerat sig för att svänga vänster.'],
+ ['omk3','omk','Vad betyder en heldragen linje mellan körfälten?',['Den får inte korsas eller köras på','Den får korsas vid omkörning','Den varnar för en kurva','Den visar var du ska stanna'],'En heldragen linje (spärrlinje) får inte korsas.','m_held'],
+ ['omk4','omk','Vad betyder en varningslinje?',['Den varnar för en fara längre fram – korsa den bara om det är helt säkert','Omkörning är alltid förbjuden','Du får inte byta körfält','Du närmar dig en stopplinje'],'Varningslinjen har långa streck och korta mellanrum. Den varnar till exempel för en kommande heldragen linje eller skymd sikt.','m_varn'],
+ ['omk5','omk','Får du köra om ett fordon omedelbart före ett obevakat övergångsställe?',['Nej','Ja, om ingen gående syns','Ja, om du kör under 30 km/h','Ja, om du blinkar'],'Du får inte köra om omedelbart före eller på ett obevakat övergångsställe. Det kan finnas gående som du inte ser.','b_overgang'],
+ ['omk6','omk','Du ska byta körfält. Vem har företräde?',['Fordonen i det körfält du byter till','Du, om du blinkar i tid','Den som kör fortast','Den som är till höger'],'Den som byter körfält ska lämna företräde åt fordon i det andra körfältet.'],
+ ['omk7','omk','Du blir omkörd. Vad gör du?',['Håller till höger och ökar inte farten','Ökar farten så att omkörningen går fortare','Bromsar kraftigt','Kör närmare mitten av vägen'],'Underlätta för den som kör om genom att hålla till höger och inte öka farten.'],
+ ['omk8','omk','Vilket fordon får du köra om trots det här märket?',['En motorcykel utan sidvagn','En personbil','En buss','En lastbil'],'Förbud mot omkörning gäller motordrivna fordon med fler än två hjul. Tvåhjuliga mopeder och motorcyklar utan sidvagn får du köra om.','c_omkorning'],
+ ['omk9','omk','Vad gör du först när du ska köra om?',['Kontrollerar att det är fritt framåt och bakåt, inklusive döda vinkeln','Blinkar och kör ut direkt','Tutar för att varna föraren framför','Kör nära bilen framför för att se förbi'],'Kontrollera sikt, speglar och döda vinkeln. Blinka i god tid innan du kör ut.'],
+ // gang
+ ['gang1','gang','En gående står vid ett obevakat övergångsställe och ska gå över. Vad gör du?',['Stannar och släpper över den gående','Kör förbi om du hinner före','Tutar för att varna','Kör långsamt förbi framför den gående'],'Du har väjningsplikt mot gående som är ute på eller ska gå ut på ett obevakat övergångsställe.','b_overgang'],
+ ['gang2','gang','Vad är ett obevakat övergångsställe?',['Ett övergångsställe som inte regleras av trafiksignal eller polis','Ett övergångsställe utan vägmärke','Ett övergångsställe på landsväg','Ett övergångsställe där gående har väjningsplikt'],'Bevakat betyder att trafiksignal eller polis reglerar trafiken. Annars är det obevakat.'],
+ ['gang3','gang','En cyklist ska ut på en cykelöverfart framför dig. Vad gäller?',['Du har väjningsplikt mot cyklisten','Cyklisten har väjningsplikt mot dig','Den som kommer från höger kör först','Cyklisten ska kliva av och leda cykeln'],'Vid en cykelöverfart har du väjningsplikt mot cyklister och mopedförare.','b_cykeloverfart'],
+ ['gang4','gang','En cyklist ska korsa vägen vid en cykelpassage. Vad gäller?',['Cyklisten har väjningsplikt, men du ska anpassa farten','Du har alltid väjningsplikt','Du måste stanna helt','Cykelpassager gäller bara på natten'],'Vid en cykelpassage är det cyklisten som väjer. Du ska ändå anpassa farten så att det inte blir farligt.'],
+ ['gang5','gang','Du ska köra förbi en cyklist. Vad är viktigast?',['Att hålla god marginal i sidled','Att tuta innan du kör förbi','Att köra förbi så snabbt som möjligt','Att ligga nära så att mötande kan passera'],'Cyklister kan svaja eller väja för hinder. Ge dem ordentligt med utrymme.','a_cykel'],
+ ['gang6','gang','En bil i körfältet bredvid har stannat före ett övergångsställe. Vad gör du?',['Saktar in och är beredd att stanna – en gående kan vara skymd','Kör förbi i samma fart','Kör förbi och tutar','Byter körfält och kör om bilen'],'Bilen har troligen stannat för en gående som du inte ser.'],
+ ['gang7','gang','Du kör på en gågata för att lämna varor. Hur ska du köra?',['I gångfart och med väjningsplikt mot gående','I 30 km/h','Som på en vanlig gata','Gående ska väja för dig'],'På gågata får du bara köra om det behövs, i gångfart, och du har väjningsplikt mot gående.','e_gagata'],
+ ['gang8','gang','Du ser barn som leker nära vägkanten. Vad gör du?',['Sänker farten och är beredd att stanna','Tutar så att de flyttar på sig','Kör vidare i samma fart','Kör ut mot mitten av vägen i samma fart'],'Barn är svåra att förutse och kan springa ut plötsligt.','a_barn'],
+ // park
+ ['park1','park','Hur nära ett övergångsställe får du stanna eller parkera?',['Inte närmare än 10 meter före','Inte närmare än 5 meter före','Inte närmare än 20 meter före','Det finns ingen gräns'],'Du får inte stanna eller parkera på övergångsstället eller inom 10 meter före det.','m_zebra'],
+ ['park2','park','Hur nära en korsning får du stanna eller parkera?',['Inte närmare än 10 meter från den korsande körbanan','Inte närmare än 5 meter','Inte närmare än 25 meter','Du får stanna direkt i korsningen'],'Du får inte stanna eller parkera i en korsning eller inom 10 meter från en korsande körbana.'],
+ ['park3','park','Vad betyder en gul streckad linje längs vägkanten?',['Förbud mot att parkera','Förbud mot att stanna och parkera','Parkering för bussar','Cykelfält'],'Gul streckad linje = parkeringsförbud. Du får stanna för av- och påstigning.','m_gulStreck'],
+ ['park4','park','Vad betyder en gul heldragen linje längs vägkanten?',['Förbud mot att stanna och parkera','Förbud mot att parkera','Parkering tillåten högst en timme','Linjen visar var vägrenen börjar'],'Gul heldragen linje = förbud att både stanna och parkera.','m_gulHeld'],
+ ['park5','park','På vilken sida av en dubbelriktad väg ska du parkera?',['På höger sida i färdriktningen','På vänster sida','På den sida där det finns plats','På valfri sida'],'Du ska stanna och parkera på höger sida. På enkelriktad väg får du använda båda sidorna.'],
+ ['park6','park','Hur länge får du som längst parkera på samma plats på vardagar om inget annat är skyltat?',['24 timmar','12 timmar','48 timmar','En vecka'],'Om inget annat anges får du inte stå på samma plats längre än 24 timmar i följd på vardagar.'],
+ ['park7','park','Vad är skillnaden mellan att stanna och att parkera?',['Att stanna är ett kort uppehåll för av- och påstigning eller lastning – allt annat är parkering','Att stanna är när motorn är igång','Att parkera är bara när du lämnar bilen','Det är samma sak'],'Stanna = kortvarigt för av- och påstigning eller lastning. Annars räknas det som parkering.'],
+ ['park8','park','Får du parkera på en huvudled?',['Nej','Ja, alltid','Ja, men bara på natten','Ja, om du har varningsblinkers på'],'Det är förbjudet att parkera på huvudled.','b_huvud'],
+ ['park9','park','Vad betyder det här märket?',['Du får inte parkera, men du får stanna en kort stund','Du får varken stanna eller parkera','Parkering är tillåten','Du får inte köra in'],'Ett rött snedstreck på blå botten betyder parkeringsförbud. Ett rött kryss betyder förbud mot att både stanna och parkera.','c_park'],
+ ['park10','park','En tilläggstavla under ett P-märke visar 8–18 med svarta siffror och (8–14) inom parentes. När gäller (8–14)?',['Lördagar och dagar före sön- och helgdag','Söndagar','Alla dagar','Vardagar'],'Svarta siffror = vardagar, inom parentes = dag före sön- och helgdag (oftast lördag), röda = sön- och helgdagar.','e_park'],
+ ['park11','park','Får du stanna i en tunnel?',['Nej, bara om trafiken eller ett nödläge kräver det','Ja, om du sätter på varningsblinkers','Ja, för av- och påstigning','Ja, i högst fem minuter'],'Det är förbjudet att stanna eller parkera i tunnlar.'],
+ // motor
+ ['motor1','motor','Du har missat din avfart på motorvägen. Vad gör du?',['Kör vidare till nästa avfart','Stannar på vägrenen och backar','Vänder över mittremsan','Stannar och väntar på en lucka'],'Du får aldrig backa eller vända på motorväg.','e_motorvag'],
+ ['motor2','motor','Vem får INTE köra på motorväg?',['En mopedförare','En lastbil','En motorcykel','En personbil med släpvagn'],'Bara fordon som får och kan köra minst 40 km/h får köra på motorväg. Mopeder får inte.'],
+ ['motor3','motor','Hur kör du in på motorvägen från påfarten?',['Anpassar farten i accelerationsfältet och lämnar företräde åt trafiken på motorvägen','Stannar i slutet av påfarten och väntar','Kör ut direkt – trafiken på motorvägen ska släppa in dig','Kör långsamt för att vara säker'],'Använd accelerationsfältet för att komma upp i samma fart som trafiken. De som redan kör på motorvägen har företräde.'],
+ ['motor4','motor','Du får motorstopp på motorvägen. Vad gör du?',['Varningsblinkers, reflexväst, varningstriangel och ställer dig bakom vägräcket','Sitter kvar i bilen och väntar','Går längs vägen för att hämta hjälp','Försöker laga bilen på vägen'],'Varna andra och ta dig själv i säkerhet bakom räcket.'],
+ ['motor5','motor','Vad skiljer motortrafikled från motorväg?',['Det kan finnas mötande trafik utan mittremsa','Det är högre hastighet','Mopeder får köra där','Det får finnas övergångsställen'],'Motortrafikled har i stort sett samma regler som motorväg, men kan ha mötande trafik och kortare på- och avfarter.','e_motortrafikled'],
+ ['motor6','motor','Får du stanna på motorvägens vägren för att ta en paus?',['Nej, bara i nödfall','Ja, om du sätter på varningsblinkers','Ja, i högst 15 minuter','Ja, på natten'],'Du får bara stanna på motorväg på parkeringsplatser eller i nödfall.'],
+ // vinter
+ ['vinter1','vinter','Mellan vilka datum måste du ha vinterdäck när det är vinterväglag?',['1 december – 31 mars','1 november – 31 mars','1 oktober – 15 april','1 december – 28 februari'],'Vinterdäckskravet gäller 1 december–31 mars vid vinterväglag.'],
+ ['vinter2','vinter','Vilket mönsterdjup måste vinterdäck minst ha?',['3 mm','1,6 mm','5 mm','2 mm'],'Vinterdäck ska ha minst 3 mm mönsterdjup. Sommardäck minst 1,6 mm.'],
+ ['vinter3','vinter','Vilket mönsterdjup måste sommardäck minst ha?',['1,6 mm','3 mm','1 mm','2,5 mm'],'Lagkravet är 1,6 mm, men däcken greppar betydligt sämre på vått väglag långt innan dess.'],
+ ['vinter4','vinter','När får du använda dubbdäck om det inte är vinterväglag?',['1 oktober – 15 april','1 november – 31 mars','Hela året','Aldrig'],'Dubbdäck är tillåtna 1 oktober–15 april, och annars bara när det är vinterväglag.'],
+ ['vinter5','vinter','När är risken för halka oftast störst?',['När temperaturen ligger runt noll grader','När det är minus 15 grader','När det är torrt och kallt','Mitt på dagen i solsken'],'Runt noll grader blir isen blöt och mycket hal. Broar fryser först.','a_slirig'],
+ ['vinter6','vinter','Bilen börjar vattenplana. Vad gör du?',['Släpper gasen och håller ratten stilla','Bromsar hårt','Gasar för att ta dig igenom','Svänger kraftigt åt sidan'],'Låt bilen sakta in tills däcken får kontakt med vägen igen.'],
+ ['vinter7','vinter','Du kör med helljus och möter en bil. Vad gör du?',['Bländar av i god tid','Bländar av när ni är bredvid varandra','Behåller helljuset så att du ser bättre','Blinkar med helljuset'],'Blända av i god tid så att den mötande inte blir bländad.'],
+ ['vinter8','vinter','Vilken belysning ska du ha när du kör på dagen?',['Halvljus eller varselljus','Ingen belysning behövs','Helljus','Dimljus'],'Du ska alltid ha halvljus eller varselljus tänt när du kör.'],
+ ['vinter9','vinter','Du blir bländad av en mötande bil i mörker. Vad gör du?',['Sänker farten och tittar mot högerkanten av vägen','Tittar rakt in i ljuset','Sätter på helljuset','Ökar farten för att komma förbi snabbt'],'Titta mot högerkanten för att hålla kursen och sänk farten tills du ser igen.'],
+ // alko
+ ['alko1','alko','Vid vilken promillehalt räknas det som rattfylleri?',['0,2 promille','0,5 promille','0,8 promille','1,0 promille'],'Gränsen för rattfylleri i Sverige är 0,2 promille.'],
+ ['alko2','alko','Vid vilken promillehalt räknas det som grovt rattfylleri?',['1,0 promille','0,5 promille','0,8 promille','1,5 promille'],'Från 1,0 promille räknas det som grovt rattfylleri.'],
+ ['alko3','alko','Vad får alkoholen att försvinna snabbare ur kroppen?',['Ingenting – bara tid','Kaffe','En kall dusch','Att äta en stor måltid'],'Levern bryter ner alkohol i en jämn takt. Det går inte att påskynda.'],
+ ['alko4','alko','Du känner dig trött när du kör. Vad är bäst att göra?',['Stanna på en säker plats och vila eller sova en stund','Öppna fönstret och fortsätta','Höja volymen på musiken','Köra fortare för att komma fram snabbare'],'Trötthet försämrar din förmåga lika mycket som alkohol. Vila är det enda som hjälper.'],
+ ['alko5','alko','Vad gäller för mobiltelefon när du kör?',['Du får inte hålla den i handen','Du får använda den fritt','Du får skriva sms vid rött ljus utan att tänka på trafiken','Det är förbjudet att ha mobilen i bilen'],'Du får inte hålla mobilen i handen när du kör. Handsfree är tillåtet.'],
+ ['alko6','alko','Vad betyder en röd varningstriangel på en läkemedelsförpackning?',['Läkemedlet kan påverka din förmåga att köra','Läkemedlet är receptfritt','Läkemedlet är bara för barn','Läkemedlet ska förvaras kallt'],'Läkemedel med röd varningstriangel kan göra dig trött eller påverka reaktionsförmågan.'],
+ // saker
+ ['saker1','saker','Vem ansvarar för att en 12-årig passagerare använder bälte?',['Föraren','Passageraren själv','Föräldern, även om den inte är med','Ingen'],'Föraren ansvarar för att passagerare under 15 år använder bälte eller bilbarnstol.'],
+ ['saker2','saker','Hur långa barn måste minst använda bilbarnstol eller bälteskudde?',['Barn under 135 cm','Barn under 100 cm','Barn under 150 cm','Barn under 7 år, oavsett längd'],'Barn som är kortare än 135 cm ska använda bilbarnstol eller bälteskudde.'],
+ ['saker3','saker','Får en bakåtvänd bilbarnstol sitta i framsätet?',['Bara om airbagen på passagerarsidan är avstängd','Ja, alltid','Nej, aldrig','Bara på korta resor'],'En aktiverad airbag kan skada barnet allvarligt.'],
+ ['saker4','saker','Du kommer först till en trafikolycka. Vad gör du först?',['Varnar andra trafikanter och skyddar olycksplatsen','Flyttar de skadade direkt','Kör vidare och ringer senare','Tar bilder på olyckan'],'Skydda platsen först så att ingen mer skadas. Larma sedan 112 och ge första hjälpen.'],
+ ['saker5','saker','Hur långt bakom bilen ska du ungefär placera varningstriangeln på en vanlig väg?',['50–100 meter','5–10 meter','10–20 meter','Direkt bakom bilen'],'Andra trafikanter ska hinna se triangeln och sakta in.'],
+ ['saker6','saker','Du har kört på ett rådjur. Vad måste du göra?',['Markera platsen och ringa 112 för att anmäla olyckan','Ingenting, om bilen är hel','Ta med djuret','Ringa en veterinär'],'Viltolyckor med bland annat älg, rådjur, hjort och vildsvin måste markeras och anmälas till polisen via 112.','a_radjur'],
+ ['saker7','saker','När är risken för viltolyckor störst?',['I gryning och skymning','Mitt på dagen','På natten när det är fullmåne','Det finns ingen skillnad'],'Djuren rör sig mest i gryning och skymning, och då är sikten också sämre.','a_alg'],
+ ['saker8','saker','En älg dyker plötsligt upp framför bilen. Vad gör du?',['Bromsar så hårt du kan och försöker styra bakom djuret','Gasar för att hinna förbi','Väjer kraftigt ut i diket','Släpper ratten'],'Bromsa maximalt och styr mot det håll djuret kom från. En kraftig gir i hög fart kan vara farligare.','a_alg'],
+];
+const RULE = Object.fromEntries(RULES.map(([id,topic,q,a,exp,sign])=>[id,{id,topic,q,a,exp,sign}]));
+
+/* ============================================================
+   VEM KÖR FÖRST? – animerade situationer
+   ============================================================ */
+const CARCOL = {red:{fill:'#d8392b',name:'Röd bil'},blue:{fill:'#2c6fd6',name:'Blå bil'},yellow:{fill:'#eeb30a',name:'Gul bil'},green:{fill:'#2b9b56',name:'Grön bil'},ped:{fill:'#7a3fbf',name:'Gående'}};
+const ROT={S:0,E:-90,N:180,W:90};
+const SCEN = [
+ {id:'h1',title:'Korsning utan skyltar',q:'Du kör rakt fram. Vem kör först?',cars:[{id:'red',from:'S',move:'straight',you:1},{id:'blue',from:'E',move:'straight'}],answer:'blue',order:[['blue'],['red']],exp:'Högerregeln: i en korsning utan vägmärken väjer du för fordon från höger. Den blå bilen kommer från din högra sida och kör först.'},
+ {id:'h2',title:'Bil från vänster',q:'Du kör rakt fram. Vem kör först?',cars:[{id:'red',from:'S',move:'straight',you:1},{id:'blue',from:'W',move:'straight'}],answer:'red',order:[['red'],['blue']],exp:'Den blå bilen kommer från din vänstra sida. För den blå föraren kommer du från höger – så det är den som har väjningsplikt. Du kör först.'},
+ {id:'v1',title:'Vänstersväng',q:'Du ska svänga vänster. Vem kör först?',cars:[{id:'red',from:'S',move:'left',you:1},{id:'yellow',from:'N',move:'straight'}],answer:'yellow',order:[['yellow'],['red']],exp:'Den som svänger vänster har väjningsplikt mot mötande som kör rakt fram eller svänger höger. Släpp fram den gula bilen.'},
+ {id:'mv',title:'Mötande svänger vänster',q:'Du kör rakt fram. Den mötande ska svänga vänster. Vem kör först?',cars:[{id:'red',from:'S',move:'straight',you:1},{id:'yellow',from:'N',move:'left'}],answer:'red',order:[['red'],['yellow']],exp:'Den gula bilen svänger vänster och har väjningsplikt mot dig som kör rakt fram. Du kör först.'},
+ {id:'vh',title:'Samma mål',q:'Du svänger vänster och den mötande svänger höger. Vem kör först?',cars:[{id:'red',from:'S',move:'left',you:1},{id:'yellow',from:'N',move:'right'}],answer:'yellow',order:[['yellow'],['red']],exp:'Ni ska in på samma väg. Den som svänger vänster ska släppa fram mötande som svänger höger. Den gula bilen kör först.'},
+ {id:'hl',title:'Huvudled',q:'Du kör på huvudled. Vem kör först?',cars:[{id:'red',from:'S',move:'straight',you:1},{id:'blue',from:'E',move:'straight'}],signs:{S:'b_huvud',N:'b_huvud',E:'b_vaj',W:'b_vaj'},marks:{E:'vaj',W:'vaj'},answer:'red',order:[['red'],['blue']],exp:'Du kör på huvudled (den gula romben). Den blå bilen har väjningsplikt, vilket också visas med märket och hajtänderna – trots att den kommer från höger. Du kör först.'},
+ {id:'st',title:'Stopplikt',q:'Du har stopplikt. Vem kör först?',cars:[{id:'red',from:'S',move:'straight',you:1},{id:'green',from:'W',move:'straight'}],signs:{S:'b_stopp',N:'b_stopp',E:'b_huvud',W:'b_huvud'},marks:{S:'stopp',N:'stopp'},answer:'green',order:[['green'],['red']],exp:'Stopplikt: stanna helt vid stopplinjen och väj sedan för all trafik på den korsande vägen – även från vänster. Den gröna bilen kör först.'},
+ {id:'tre',title:'Tre bilar',q:'Ingen skyltning. Vem kör först?',cars:[{id:'red',from:'S',move:'straight',you:1},{id:'blue',from:'E',move:'straight'},{id:'green',from:'N',move:'straight'}],answer:'green',order:[['green'],['blue'],['red']],exp:'Ta bilarna en i taget. Du väjer för blå (från din höger). Blå väjer för grön (från blås höger). Grön har ingen till höger och kör först. Sedan blå – och sist du.'},
+ {id:'hlv',title:'Vänster på huvudled',q:'Du kör på huvudled och ska svänga vänster. Vem kör först?',cars:[{id:'red',from:'S',move:'left',you:1},{id:'yellow',from:'N',move:'straight'},{id:'blue',from:'E',move:'straight'}],signs:{S:'b_huvud',N:'b_huvud',E:'b_vaj',W:'b_vaj'},marks:{E:'vaj',W:'vaj'},answer:'yellow',order:[['yellow'],['red'],['blue']],exp:'Blå har väjningsplikt mot alla på huvudleden. Du svänger vänster och väjer därför för den mötande gula bilen. Ordning: gul, du, blå.'},
+ {id:'park',type:'parking',title:'Utfart från parkering',q:'Du kör ut från en parkeringsplats. Vem kör först?',cars:[{id:'red',from:'S',move:'right',you:1},{id:'blue',from:'W',move:'straight'}],answer:'blue',order:[['blue'],['red']],exp:'Utfartsregeln: när du kör ut från en parkeringsplats, gårdsplats eller bensinstation väjer du för alla på vägen – även för en bil från vänster och för gående på trottoaren.'},
+ {id:'rond',type:'round',title:'Cirkulationsplats',q:'Du ska in i cirkulationsplatsen. Vem kör först?',cars:[{id:'red',custom:'youRound',you:1},{id:'blue',custom:'blueRound'}],signs:{S:'b_vaj',N:'b_vaj',E:'b_vaj',W:'b_vaj'},marks:{S:'vaj',N:'vaj',E:'vaj',W:'vaj'},answer:'blue',order:[['blue'],['red']],exp:'Vid infarten finns väjningsplikt och hajtänder. Du väjer för den som redan kör i cirkulationsplatsen – den blå bilen.'},
+ {id:'zebra',type:'zebra',title:'Övergångsställe',q:'En person ska gå ut på det obevakade övergångsstället. Vem går/kör först?',cars:[{id:'red',from:'S',move:'straight',you:1},{id:'ped',custom:'ped'}],signs:{S:'b_overgang'},answer:'ped',order:[['ped'],['red']],exp:'Vid ett obevakat övergångsställe har du väjningsplikt mot gående som är ute på eller ska gå ut på det. Sänk farten i god tid och stanna.'},
+];
+const SCN = Object.fromEntries(SCEN.map(s=>[s.id,s]));
+
+function rot(p,deg){const a=deg*Math.PI/180,dx=p[0]-150,dy=p[1]-150;return [150+dx*Math.cos(a)-dy*Math.sin(a),150+dx*Math.sin(a)+dy*Math.cos(a)];}
+function seg(arr,a,b){arr.push(a,b);return arr}
+function quadPts(arr,p0,c,p1,n=18){for(let i=0;i<=n;i++){const t=i/n,u=1-t;arr.push([u*u*p0[0]+2*u*t*c[0]+t*t*p1[0],u*u*p0[1]+2*u*t*c[1]+t*t*p1[1]])}return arr}
+function arcPts(arr,r,a0,a1,n=30){for(let i=0;i<=n;i++){const a=(a0+(a1-a0)*i/n)*Math.PI/180;arr.push([150+r*Math.cos(a),150+r*Math.sin(a)])}return arr}
+function basePath(move){
+  const p=[];
+  if(move==='straight') seg(p,[165,215],[165,-40]);
+  if(move==='left'){ seg(p,[165,215],[165,184]); quadPts(p,[165,184],[165,135],[116,135]); p.push([-40,135]); }
+  if(move==='right'){ seg(p,[165,215],[165,188]); quadPts(p,[165,188],[165,165],[188,165]); p.push([340,165]); }
+  return p;
+}
+const CUSTOM = {
+  youRound:()=>{return {intro:[[165,330],[165,230]],main:[[165,230],[165,189],...arcPts([],42,69,21).slice(1),[340,165]]}},
+  blueRound:()=>({intro:arcPts([],42,265,200),main:[...arcPts([],42,200,-69),[165,-40]]}),
+  ped:()=>({intro:[[40,150],[106,150]],main:[[106,150],[250,150]]}),
+};
+function carRoute(car){
+  if(car.custom) return CUSTOM[car.custom]();
+  const d=ROT[car.from];
+  return {intro:[[165,330],[165,215]].map(p=>rot(p,d)), main:basePath(car.move).map(p=>rot(p,d))};
+}
+function mkPath(pts){const L=[0];for(let i=1;i<pts.length;i++){L.push(L[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]))}return {pts,L,total:L[L.length-1]}}
+function posAt(path,d){
+  const {pts,L}=path; if(d<=0) return ang(pts[0],pts[1],pts[0]);
+  for(let i=1;i<pts.length;i++){ if(L[i]>=d){const t=(d-L[i-1])/((L[i]-L[i-1])||1);const x=pts[i-1][0]+(pts[i][0]-pts[i-1][0])*t,y=pts[i-1][1]+(pts[i][1]-pts[i-1][1])*t;return ang(pts[i-1],pts[i],[x,y])} }
+  const n=pts.length; return ang(pts[n-2],pts[n-1],pts[n-1]);
+}
+function ang(a,b,p){return {x:p[0],y:p[1],a:Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI+90}}
+
+function carSVG(car){
+  if(car.id==='ped') return `<g id="obj-ped"><ellipse rx="9" ry="5.5" fill="${CARCOL.ped.fill}"/><circle r="4.2" fill="#f1c9a5"/></g>`;
+  const c=CARCOL[car.id].fill, turn=car.move==='left'?-1:car.move==='right'||car.custom==='youRound'?1:0;
+  return `<g id="obj-${car.id}"><rect x="-10" y="-17" width="20" height="34" rx="5.5" fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="1"/><rect x="-7.5" y="-10" width="15" height="7" rx="2" fill="rgba(255,255,255,.75)"/><rect x="-7.5" y="7" width="15" height="5" rx="2" fill="rgba(255,255,255,.45)"/>${car.you?`<text y="3.5" text-anchor="middle" font-family="Overpass,Arial" font-weight="900" font-size="9" fill="#fff">DU</text>`:''}${turn?`<circle class="blink" cx="${turn*8}" cy="-15" r="3" fill="#ffb300"/><circle class="blink" cx="${turn*8}" cy="15" r="3" fill="#ffb300"/>`:''}</g>`;
+}
+function sceneSVG(sc, opts={}){
+  const type=sc.type||'cross';
+  const arms= type==='parking'?['W','E']: type==='zebra'?['N','S']:['N','E','S','W'];
+  let s=`<svg viewBox="0 0 300 300" class="scene" ${opts.id?`id="${opts.id}"`:''} role="img" aria-label="${sc.title}"><rect width="300" height="300" class="grass"/>`;
+  s+=`<circle cx="40" cy="40" r="26" class="grass2"/><circle cx="262" cy="258" r="30" class="grass2"/><circle cx="258" cy="44" r="18" class="grass2"/>`;
+  if(type==='parking'){
+    s+=`<rect x="0" y="180" width="300" height="14" class="walk"/><rect x="0" y="106" width="300" height="14" class="walk"/>`;
+    s+=`<rect x="95" y="226" width="180" height="74" class="lot"/>`;
+    for(let x=105;x<275;x+=28) s+=`<rect x="${x}" y="262" width="2.5" height="38" fill="#fff" opacity=".8"/>`;
+    s+=`<rect x="140" y="194" width="50" height="40" class="lot"/>`;
+    s+=sceneSign('e_park',211,209,22);
+  }
+  if(type==='zebra'){ s+=`<rect x="100" y="0" width="20" height="300" class="walk"/><rect x="180" y="0" width="20" height="300" class="walk"/>`; }
+  arms.forEach(a=>{ s+=`<g transform="rotate(${ROT[a]} 150 150)"><rect x="120" y="150" width="60" height="170" class="road"/>${type==='round'?`<line x1="150" y1="212" x2="150" y2="310" class="dash"/>`:type==='zebra'?'':`<line x1="150" y1="186" x2="150" y2="310" class="dash"/>`}</g>`; });
+  if(type==='parking'){ s+=`<rect x="0" y="120" width="300" height="60" class="road"/><line x1="0" y1="150" x2="300" y2="150" class="dash"/>`; }
+  if(type==='zebra'){ s+=`<rect x="120" y="0" width="60" height="300" class="road"/><line x1="150" y1="0" x2="150" y2="300" class="dash"/>`; for(let x=123;x<180;x+=11) s+=`<rect x="${x}" y="136" width="6" height="28" class="mk"/>`; }
+  if(type==='cross'){ s+=`<rect x="120" y="120" width="60" height="60" class="road"/>`; }
+  if(type==='round'){ s+=`<circle cx="150" cy="150" r="62" class="road"/><circle cx="150" cy="150" r="24" class="grass2" stroke="#fff" stroke-width="3"/>`; }
+  const marks=sc.marks||{};
+  Object.entries(marks).forEach(([a,m])=>{
+    const y= type==='round'?214:188;
+    let g='';
+    if(m==='vaj') for(let i=0;i<5;i++) g+=`<path d="M${152+i*5.6} ${y} L${157+i*5.6} ${y} L${154.5+i*5.6} ${y+7} Z" class="mk"/>`;
+    if(m==='stopp') g+=`<rect x="151" y="${y}" width="28" height="5" class="mk"/>`;
+    s+=`<g transform="rotate(${ROT[a]} 150 150)">${g}</g>`;
+  });
+  const signs=sc.signs||{};
+  Object.entries(signs).forEach(([a,id])=>{ const off= type==='round'?240:206; const [x,y]=rot([194,off],ROT[a]); s+=sceneSign(id,x,y,24); });
+  if(type==='round' && sc.id==='rond'){ const [x,y]=[194,268]; s+=sceneSign('d_cirk',x,y,24); }
+  s+=`<g class="objs">`;
+  sc.cars.forEach(c=>{ const r=carRoute(c); const p=posAt(mkPath(r.main),0); s+=`<g class="obj" data-id="${c.id}" transform="translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${p.a.toFixed(1)})">${carSVG(c)}</g>`; });
+  s+=`</g><g class="badges"></g></svg>`;
+  return s;
+}
+const reduceMotion = ()=>{try{return window.matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}};
+let animToken=0;
+function animateScene(root, sc, phase){
+  const token=++animToken;
+  const svg=root.querySelector('svg.scene'); if(!svg) return;
+  const objs={}; svg.querySelectorAll('.obj').forEach(g=>objs[g.dataset.id]=g);
+  const routes={}; sc.cars.forEach(c=>{const r=carRoute(c);routes[c.id]={intro:mkPath(r.intro),main:mkPath(r.main)}});
+  const place=(id,path,d)=>{const p=posAt(path,d);objs[id].setAttribute('transform',`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${p.a.toFixed(1)})`)};
+  const SPEED = reduceMotion()? 4000 : 120;
+  function run(ids,kind,done){
+    const t0=performance.now();
+    const dur=Math.max(...ids.map(id=>routes[id][kind].total))/ (ids.includes('ped')&&kind==='main'?SPEED*0.45:SPEED)*1000;
+    function step(t){
+      if(token!==animToken) return;
+      const k=Math.min(1,(t-t0)/dur), e=kind==='intro'?1-Math.pow(1-k,2):k*k*(3-2*k);
+      ids.forEach(id=>place(id,routes[id][kind],routes[id][kind].total*e));
+      if(k<1) requestAnimationFrame(step); else done&&done();
+    }
+    requestAnimationFrame(step);
+  }
+  if(phase==='intro'){
+    sc.cars.forEach(c=>place(c.id,routes[c.id].intro,0));
+    run(sc.cars.map(c=>c.id),'intro');
+  } else {
+    // nollställ till väntläge och visa ordningsnummer
+    sc.cars.forEach(c=>place(c.id,routes[c.id].main,0));
+    const bg=svg.querySelector('.badges'); bg.innerHTML='';
+    sc.order.forEach((grp,i)=>grp.forEach(id=>{const p=posAt(routes[id].main,0);const [ox,oy]=offsetBadge(p);bg.insertAdjacentHTML('beforeend',`<g class="badge" style="animation-delay:${i*.15}s;transform-origin:${p.x+ox}px ${p.y+oy}px"><circle cx="${p.x+ox}" cy="${p.y+oy}" r="11"/><text x="${p.x+ox}" y="${p.y+oy+4.5}" text-anchor="middle">${i+1}</text></g>`)}));
+    let i=0;
+    const next=()=>{ if(token!==animToken||i>=sc.order.length) return; const g=sc.order[i++]; setTimeout(()=>run(g,'main',next), i===1?700:250); };
+    next();
+  }
+}
+function offsetBadge(p){ // lägg badge utanför vägen
+  const dx=p.x-150, dy=p.y-150;
+  if(Math.abs(dy)>Math.abs(dx)) return [dx>0?-34:34, 0];
+  return [0, dy>0?-30:30];
+}
+
+/* ============================================================
+   FRAMSTEG (sparas lokalt i webbläsaren)
+   ============================================================ */
+const STORE_KEY='trafikspel.v1';
+function loadP(){try{const d=JSON.parse(localStorage.getItem(STORE_KEY));if(d&&d.items)return d}catch(e){}return {items:{},exams:[],days:{}}}
+let P=loadP();
+function saveP(){try{localStorage.setItem(STORE_KEY,JSON.stringify(P))}catch(e){}}
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function rec(key,ok){const it=P.items[key]||{b:0,r:0,w:0};if(ok){it.b=Math.min(5,it.b+1);it.r++}else{it.b=0;it.w++}it.t=Date.now();it.last=ok;P.items[key]=it;const d=today();P.days[d]=(P.days[d]||0)+1;saveP()}
+const box=k=>(P.items[k]&&P.items[k].b)||0;
+function signLevel(id){const s=box('sn:'+id)+box('ns:'+id);return s>=4?2:s>=1?1:0}
+function ruleDone(id){return box('r:'+id)>=2}
+function scenDone(id){return box('s:'+id)>=1}
+function streak(){const k=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const d=new Date();if(!P.days[k(d)])d.setDate(d.getDate()-1);let n=0;while(P.days[k(d)]){n++;d.setDate(d.getDate()-1)}return n}
+(function migrate(){let ch=false;for(const k of Object.keys(P.items)){const [t,id]=k.split(':');if((t==='sn'||t==='ns')&&!ITEM[id]){const n=rid(id);if(n&&!P.items[t+':'+n])P.items[t+':'+n]=P.items[k];delete P.items[k];ch=true}}if(ch)saveP()})();
+const ALL_RULE_KEYS=RULES.map(r=>'r:'+r[0]);
+const ALL_SCEN_KEYS=SCEN.map(s=>'s:'+s.id);
+const wrongKeys=()=>Object.entries(P.items).filter(([k,v])=>v.last===false).map(([k])=>k).filter(k=>validKey(k));
+function validKey(k){const [t,id]=k.split(':');return (t==='sn'||t==='ns')?!!ITEM[id]:t==='r'?!!RULE[id]:t==='s'?!!SCN[id]:false}
+
+/* ============================================================
+   HJÄLPFUNKTIONER
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function pickSmart(pool,n){return pool.map(k=>{const it=P.items[k];let p=it?it.b*10:4;if(it&&it.last===false)p-=20;if(it&&Date.now()-it.t<60000)p+=15;return [k,p+Math.random()*9]}).sort((a,b)=>a[1]-b[1]).slice(0,n).map(x=>x[0])}
+function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+
+/* ============================================================
+   FRÅGEBYGGARE
+   ============================================================ */
+function distractors(it,n){
+  const out=[], seen=new Set([it.name]);
+  const take=list=>{for(const o of shuffle(list)){if(out.length>=n)break;if(o.code===it.code||seen.has(o.name))continue;seen.add(o.name);out.push(o)}};
+  take(ITEMS.filter(o=>o.cat===it.cat&&(!it.common||o.common)));
+  if(out.length<n) take(ITEMS.filter(o=>o.cat===it.cat));
+  if(out.length<n) take(ITEMS);
+  return out;
+}
+const SN_PROMPT={M:'Vad betyder vägmarkeringen?',S:'Vad betyder signalen?',P:'Vad betyder tecknet?',T:'Vad anger tilläggstavlan?',X:'Vad betyder anordningen?'};
+function makeQ(key){
+  const [t,id]=key.split(':');
+  if(t==='sn'){const s=ITEM[id];return {key,kind:'sn',prompt:SN_PROMPT[s.cat]||'Vad betyder det här vägmärket?',visual:`<div class="q-sign">${signSVG(id,'sg-big')}</div>`,opts:shuffle([{label:s.name,ok:true},...distractors(s,3).map(o=>({label:o.name}))]),exp:shortDesc(s.desc),tip:tipFor(s),sign:id,answer:s.name}}
+  if(t==='ns'){const s=ITEM[id];return {key,kind:'ns',prompt:`Vilket är: <span style="background:var(--yellow);color:var(--on-yellow);padding:0 .2em;border-radius:4px">${esc(s.name)}</span>?`,visual:'',grid:true,opts:shuffle([{html:signSVG(id),label:s.name,ok:true},...distractors(s,3).map(o=>({html:signSVG(o.id),label:o.name}))]),exp:shortDesc(s.desc),tip:tipFor(s),sign:id,answer:s.name}}
+  if(t==='r'){const r=RULE[id];return {key,kind:'r',prompt:esc(r.q),visual:r.sign?`<div class="q-sign" style="width:min(130px,34vw);height:min(130px,34vw)">${signSVG(r.sign,'sg-big')}</div>`:'',opts:shuffle(r.a.map((x,i)=>({label:x,ok:i===0}))),exp:r.exp,sign:r.sign,answer:r.a[0]}}
+  if(t==='s'){const sc=SCN[id];const ids=[...new Set(sc.cars.map(c=>c.id))];return {key,kind:'s',scen:sc,prompt:esc(sc.q),visual:`<div class="q-scene">${sceneSVG(sc,{id:'scene'})}</div>`,opts:ids.map(cid=>({label:cid==='ped'?'Den gående':(CARCOL[cid].name+(sc.cars.find(c=>c.id===cid).you?' (du)':'')),color:CARCOL[cid].fill,id:cid,ok:cid===sc.answer})),exp:sc.exp,answer:sc.answer==='ped'?'Den gående':CARCOL[sc.answer].name+(sc.cars.find(c=>c.id===sc.answer).you?' (du)':'')}}
+}
+
+/* ============================================================
+   NAVIGERING & VYER
+   ============================================================ */
+const TABS=[
+ {id:'home',label:'Hem',ico:'<rect class="ico-bg" x="2" y="2" width="20" height="20" rx="6" fill="none"/><path d="M5 11 L12 5 L19 11 M7 10 V19 H17 V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'},
+ {id:'signs',label:'Vägmärken',ico:'<rect class="ico-bg" x="2" y="2" width="20" height="20" rx="6" fill="none"/><path d="M12 4 L21 19 H3 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10 V14 M12 16.5 V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'},
+ {id:'rules',label:'Regler',ico:'<rect class="ico-bg" x="2" y="2" width="20" height="20" rx="6" fill="none"/><path d="M6 4 H15 L18 7 V20 H6 Z M9 10 H15 M9 13 H15 M9 16 H13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'},
+ {id:'scen',label:'Vem kör först?',short:'Situationer',ico:'<rect class="ico-bg" x="2" y="2" width="20" height="20" rx="6" fill="none"/><path d="M12 3 V21 M3 12 H21" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="14" width="4" height="6" rx="1.2" fill="currentColor"/><rect x="14" y="5.5" width="6" height="4" rx="1.2" fill="currentColor"/>'},
+ {id:'exam',label:'Provläge',short:'Prov',ico:'<rect class="ico-bg" x="2" y="2" width="20" height="20" rx="6" fill="none"/><circle cx="12" cy="13" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 9 V13 L15 15 M10 3 H14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'},
+];
+let VIEW='home', SUB=null;
+function renderTabs(){
+  $('#tabsTop').innerHTML=TABS.map(t=>`<button data-nav="${t.id}" aria-current="${VIEW===t.id}">${t.label}</button>`).join('');
+  $('#tabsBottom').innerHTML=TABS.map(t=>`<button data-nav="${t.id}" aria-current="${VIEW===t.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${t.ico}</svg>${t.short||t.label}</button>`).join('');
+}
+function go(view,sub=null){VIEW=view;SUB=sub;render();window.scrollTo({top:0});try{localStorage.setItem('trafikspel.view',JSON.stringify([view,sub]))}catch(e){}}
+function render(){renderTabs();const m=$('#main');m.innerHTML=({home:vHome,signs:vSigns,rules:vRules,scen:vScen,exam:vExam})[VIEW]();if(VIEW==='home')startHeroLoop()}
+
+function heroSVG(){
+  const sc={id:'hero',title:'Korsning',type:'cross',cars:[{id:'red',from:'S',move:'straight',you:1},{id:'blue',from:'E',move:'straight'}],order:[['blue'],['red']]};
+  return sceneSVG(sc,{id:'heroScene'});
+}
+let heroTimer=null;
+function startHeroLoop(){
+  clearTimeout(heroTimer);
+  const el=$('#hero-sc'); if(!el) return;
+  const sc={id:'hero',title:'Korsning',type:'cross',cars:[{id:'red',from:'S',move:'straight',you:1},{id:'blue',from:'E',move:'straight'}],order:[['blue'],['red']]};
+  if(reduceMotion()){return}
+  const cycle=()=>{ if(!document.body.contains(el)||SES) return; el.innerHTML=heroSVG(); animateScene(el,sc,'intro'); heroTimer=setTimeout(()=>{ if(!document.body.contains(el)||SES) return; animateScene(el,sc,'main'); heroTimer=setTimeout(cycle,6500); },1600); };
+  cycle();
+}
+
+function vHome(){
+  const SI=scopeItems(); const signsKnown=SI.filter(s=>signLevel(s.id)===2).length;
+  const rulesKnown=RULES.filter(r=>ruleDone(r[0])).length;
+  const scenKnown=SCEN.filter(s=>scenDone(s.id)).length;
+  const last=P.exams[P.exams.length-1];
+  const wr=wrongKeys().length;
+  const st=streak();
+  const pct=(a,b)=>Math.round(a/b*100);
+  return `
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Övning inför teoriprovet · B-körkort</div>
+      <h1 style="margin:8px 0 12px">Lär dig vägmärken och regler <em>på riktigt.</em></h1>
+      <p>Korta övningar som anpassar sig efter det du kan och det du missar. Varje svar förklaras, och korsningarna spelas upp så att du ser vem som kör först.</p>
+      <div class="row" style="margin-top:16px">
+        <button class="btn y" data-act="smart">Dagens övning · 12 frågor</button>
+        ${wr?`<button class="btn ghost" data-act="wrong">Öva på mina fel (${wr})</button>`:`<button class="btn ghost" data-nav="signs">Bläddra bland märken</button>`}
+      </div>
+    </div>
+    <div class="hero-scene" id="hero-sc">${heroSVG()}</div>
+  </section>
+
+  <section class="section">
+    <div class="stats">
+      <div class="card stat"><b>${signsKnown}<small class="muted" style="font-size:16px"> / ${SI.length}</small></b><span>vägmärken som sitter (${SCOPE==='all'?'komplett':'vanligaste'})</span><div class="meter"><i style="width:${pct(signsKnown,SI.length)}%"></i></div></div>
+      <div class="card stat"><b>${rulesKnown}<small class="muted" style="font-size:16px"> / ${RULES.length}</small></b><span>regelfrågor som sitter</span><div class="meter"><i style="width:${pct(rulesKnown,RULES.length)}%"></i></div></div>
+      <div class="card stat"><b>${scenKnown}<small class="muted" style="font-size:16px"> / ${SCEN.length}</small></b><span>korsningar lösta</span><div class="meter"><i style="width:${pct(scenKnown,SCEN.length)}%"></i></div></div>
+      <div class="card stat"><b>${last?`${last.score}<small class="muted" style="font-size:16px"> / ${last.total}</small>`:'–'}</b><span>${last?'senaste provet':'inget prov ännu'}${st?` · ${st} dag${st>1?'ar':''} i rad`:''}</span>${last?`<div class="meter"><i style="width:${pct(last.score,last.total)}%;background:${last.score/last.total>=0.8?'var(--ok)':'var(--bad)'}"></i></div>`:''}</div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Välj vad du vill öva på</h2>
+    <div class="modes">
+      <button class="card mode" data-nav="signs"><span class="sg">${signSVG('a_alg')}</span><span><h3>Vägmärken</h3><p>Alla ${ITEMS.length} officiella märken, markeringar och signaler i ${CATS.length} kategorier – eller bara de ${ITEMS.filter(i=>i.common).length} vanligaste.</p></span><span class="go">›</span></button>
+      <button class="card mode" data-nav="rules"><span class="sg">${signSVG('b_huvud')}</span><span><h3>Trafikregler</h3><p>${TOPICS.length} ämnen med korta lektioner och ${RULES.length} frågor.</p></span><span class="go">›</span></button>
+      <button class="card mode" data-nav="scen"><span class="sg">${signSVG('a_korsning')}</span><span><h3>Vem kör först?</h3><p>${SCEN.length} korsningar som spelas upp när du har svarat.</p></span><span class="go">›</span></button>
+      <button class="card mode" data-nav="exam"><span class="sg">${signSVG('b_stopp')}</span><span><h3>Provläge</h3><p>Blandade frågor på tid, utan facit förrän du lämnar in – som på riktigt.</p></span><span class="go">›</span></button>
+    </div>
+  </section>
+
+  <div class="foot"><span>Framstegen sparas i den här webbläsaren på den här enheten.</span><span id="resetZone"><button class="linkbtn" data-act="reset1">Nollställ framsteg</button></span></div>`;
+}
+
+function vSigns(){
+  const cat=(SUB&&(SUB==='all'||CAT[SUB]))?SUB:'all'; const c=cat==='all'?ALLCAT:CAT[cat];
+  const pool=scopeItems(); const list=pool.filter(i=>cat==='all'||i.cat===cat);
+  const cnt=id=>pool.filter(i=>id==='all'||i.cat===id).length;
+  const nC=ITEMS.filter(i=>i.common).length;
+  return `
+  <div class="eyebrow">Vägmärken · ${SCOPE==='all'?'komplett':'vanligaste'}</div>
+  <h1 class="h-page">${c.name}</h1>
+  <div class="seg" role="group" aria-label="Urval"><button data-scope="common" aria-pressed="${SCOPE!=='all'}">Vanligaste <span class="num">${nC}</span></button><button data-scope="all" aria-pressed="${SCOPE==='all'}">Komplett <span class="num">${ITEMS.length}</span></button></div>
+  <div class="chips" role="tablist">${[ALLCAT,...CATS].filter(x=>cnt(x.id)>0).map(x=>`<button class="chip" data-cat="${x.id}" aria-pressed="${x.id===cat}">${x.short} <span class="num muted">${cnt(x.id)}</span></button>`).join('')}</div>
+  <div class="cat-head">
+    <p>${c.desc}${SCOPE==='all'?'':' Visar de märken som är vanligast i trafiken och på teoriprovet.'}</p>
+    <div class="row">
+      <button class="btn ghost" data-act="flash" data-cat="${cat}">Vändkort</button>
+      <button class="btn y" data-act="quizcat" data-cat="${cat}">Testa dig · 15 frågor</button>
+    </div>
+  </div>
+  <div class="sign-grid">${list.map(s=>{const l=signLevel(s.id);return `<button class="card sign-tile" data-sign="${s.id}"><i class="dot ${l?'l'+l:''}" title="${['Inte övad','På gång','Sitter'][l]}"></i>${signSVG(s.id)}<small class="code">${s.code}</small><span lang="sv">${esc(s.name)}</span></button>`}).join('')}</div>
+  <p class="muted" style="font-size:13.5px;margin-top:16px">Pricken visar hur väl du kan märket: grå = inte övat, gul = på gång, grön = sitter. Bilder och beskrivningar kommer från <a href="https://www.transportstyrelsen.se/sv/vagtrafik/trafikregler-och-vagmarken/vagmarken/" target="_blank" rel="noopener">Transportstyrelsen</a> (vägmärkesförordningen). Tipsen under "Tänk på" är skrivna för den här appen.</p>`;
+}
+
+function vRules(){
+  if(SUB&&TOPIC[SUB]) return vTopic(TOPIC[SUB]);
+  return `
+  <div class="eyebrow">Trafikregler</div>
+  <h1 class="h-page">Regler som körs på provet</h1>
+  <p class="lead">Läs den korta lektionen och testa dig direkt. Frågorna du missar kommer tillbaka i Dagens övning tills de sitter.</p>
+  <div class="topic-list">${TOPICS.map(t=>{const qs=RULES.filter(r=>r[1]===t.id);const done=qs.filter(r=>ruleDone(r[0])).length;return `<button class="card topic" data-topic="${t.id}"><span class="sg">${signSVG(t.icon)}</span><span><h3>${t.title}</h3><small>${t.sub}</small><div class="meter"><i style="width:${Math.round(done/qs.length*100)}%"></i></div><small class="num">${done} av ${qs.length} frågor sitter</small></span></button>`}).join('')}</div>`;
+}
+function vTopic(t){
+  const qs=RULES.filter(r=>r[1]===t.id);
+  return `
+  <button class="back" data-nav="rules">‹ Alla ämnen</button>
+  <div class="eyebrow" style="margin-top:6px">Trafikregler</div>
+  <h1 class="h-page">${t.title}</h1>
+  ${t.facts?`<div class="facts">${t.facts.map(f=>`<div class="fact"><b>${f[0]}</b><span>${f[1]}</span></div>`).join('')}</div>`:''}
+  ${t.demo==='stop'?stopDemo():''}
+  <div class="lesson">${t.lesson.map(l=>`<div class="card lcard"><div><h3>${l.h}</h3><p>${l.p}</p></div>${l.sign?`<span class="sg">${signSVG(l.sign)}</span>`:'<span></span>'}</div>`).join('')}</div>
+  <div class="row" style="margin-top:18px"><button class="btn y" data-act="quiztopic" data-topic="${t.id}">Testa dig · ${qs.length} frågor</button></div>`;
+}
+function stopDemo(){
+  return `<div class="card stop-demo" style="max-width:760px;margin-bottom:12px">
+    <div class="row" style="justify-content:space-between"><b style="font-family:var(--f-display);font-size:18px">Stoppsträcka i <span id="sdV" class="num">70</span> km/h</b><span class="num muted" id="sdT"></span></div>
+    <input type="range" id="sdRange" min="30" max="120" step="10" value="70" aria-label="Hastighet i km/h">
+    <div class="sd-bars"><div class="sd-row"><span>Torr väg</span><div class="sd-bar" id="sdDry"></div></div><div class="sd-row"><span>Våt väg</span><div class="sd-bar" id="sdWet"></div></div></div>
+    <div class="sd-legend"><span><span style="display:inline-block;width:10px;height:10px;background:var(--yellow);border-radius:2px"></span> Reaktionssträcka (1 s)</span><span><span style="display:inline-block;width:10px;height:10px;background:var(--bad);border-radius:2px"></span> Bromssträcka</span></div>
+    <p class="muted" style="font-size:13px;margin:8px 0 0">Ungefärliga värden för en personbil. På is kan bromssträckan bli många gånger längre.</p>
+  </div>`;
+}
+function updStop(){
+  const r=$('#sdRange'); if(!r) return; const v=+r.value; $('#sdV').textContent=v;
+  const ms=v/3.6, react=ms*1, dry=ms*ms/(2*7), wet=ms*ms/(2*4.5);
+  const max=(120/3.6)+(120/3.6)**2/(2*4.5);
+  const bar=(b)=>`<i class="sd-r" style="width:${react/max*100}%">${Math.round(react)} m</i><i class="sd-b" style="width:${b/max*100}%">${Math.round(b)} m</i>`;
+  $('#sdDry').innerHTML=bar(dry); $('#sdWet').innerHTML=bar(wet);
+  $('#sdT').textContent=`torrt ${Math.round(react+dry)} m · vått ${Math.round(react+wet)} m`;
+}
+
+function vScen(){
+  return `
+  <div class="eyebrow">Situationer</div>
+  <h1 class="h-page">Vem kör först?</h1>
+  <p class="lead">Titta på korsningen, välj vem som kör först och se sedan hur det går till. Siffrorna visar i vilken ordning bilarna kör. Den röda bilen är du.</p>
+  <div class="row" style="margin-bottom:16px"><button class="btn y" data-act="scenall">Kör alla ${SCEN.length} i blandad ordning</button></div>
+  <div class="scen-grid">${SCEN.map(s=>`<button class="card scen-tile" data-scen="${s.id}"><div class="mini">${sceneSVG(s)}</div><h3>${s.title}</h3><small>${scenDone(s.id)?'✓ Löst':'Inte löst än'}</small></button>`).join('')}</div>`;
+}
+
+function vExam(){
+  const h=P.exams.slice(-6).reverse();
+  return `
+  <div class="eyebrow">Provläge</div>
+  <h1 class="h-page">Gör ett provprov</h1>
+  <p class="lead">Frågorna blandas från alla delar. Du får inte se facit förrän du lämnar in. Godkänt är minst 80 % rätt.</p>
+  <div class="modes">
+    <div class="card examcard"><h3>Snabbprov</h3><p class="muted" style="margin:0">25 frågor · 20 minuter</p><button class="btn ghost" data-act="exam" data-n="25" data-min="20">Starta snabbprov</button></div>
+    <div class="card examcard"><h3>Fullt prov</h3><p class="muted" style="margin:0">65 frågor · 50 minuter · minst 52 rätt</p><button class="btn y" data-act="exam" data-n="65" data-min="50">Starta fullt prov</button></div>
+  </div>
+  <div class="section card examcard">
+    <h3>Om det riktiga teoriprovet</h3>
+    <ul>
+      <li>Provet görs på dator hos Trafikverket och består av 70 flervalsfrågor, varav 65 räknas. De övriga fem är testfrågor.</li>
+      <li>Du har 50 minuter på dig och behöver minst 52 rätt av 65.</li>
+      <li>Frågorna handlar om trafikregler, vägmärken, trafiksäkerhet, miljö och dig som förare. Läs varje fråga noga – ett enda ord som "inte" kan ändra svaret.</li>
+    </ul>
+    <p class="muted" style="font-size:13.5px;margin:0">Kontrollera aktuella regler för provet hos <a href="https://www.trafikverket.se/korkort/" target="_blank" rel="noopener">Trafikverket</a>.</p>
+  </div>
+  ${h.length?`<div class="section"><h2>Dina senaste prov</h2><div class="card examcard"><div class="hist">${h.map(e=>`<div><span>${e.date}</span><span>${e.score} / ${e.total} · ${e.score/e.total>=.8?'<b style="color:var(--ok)">Godkänt</b>':'<b style="color:var(--bad)">Inte godkänt</b>'}</span></div>`).join('')}</div></div></div>`:''}`;
+}
+
+/* ============================================================
+   SHEET – detaljer om ett märke
+   ============================================================ */
+function openSign(id){
+  id=rid(id); const s=ITEM[id]; const sh=$('#sheet'); const tip=tipFor(s);
+  const vars=ITEMS.filter(o=>o.code===s.code&&o.id!==id);
+  const long=s.desc.length>shortDesc(s.desc).length+20;
+  sh.innerHTML=`<div class="sheet-in" role="dialog" aria-modal="true" aria-label="${esc(s.name)}"><div class="big">${signSVG(id,'sg-big')}</div><h2>${esc(s.name)}</h2><div class="cat eyebrow">${s.code} · ${CAT[s.cat].name}${s.common?'':' · utanför vanligaste'}</div>
+  <p>${esc(long?shortDesc(s.desc):s.desc)}</p>${long?`<details class="full"><summary>Hela texten från Transportstyrelsen</summary><p>${esc(s.desc)}</p></details>`:''}
+  ${tip?`<div class="tip"><b>Tänk på</b><span>${tip}</span></div>`:''}
+  ${vars.length?`<div class="eyebrow" style="margin-top:14px">Varianter av ${s.code}</div><div class="vars">${vars.map(v=>`<button class="var" data-sign="${v.id}" title="${esc(v.name)}">${signSVG(v.id)}</button>`).join('')}</div>`:''}
+  <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-act="closesheet">Stäng</button><button class="btn y" data-act="quizone" data-sign="${id}">Testa märket</button></div></div>`;
+  sh.hidden=false; sh.querySelector('.sheet-in').scrollTop=0;
+}
+function closeSheet(){$('#sheet').hidden=true;$('#sheet').innerHTML=''}
+
+/* ============================================================
+   ÖVNINGSPASS / PROV
+   ============================================================ */
+let SES=null, examTimer=null;
+function startSession(keys,o={}){
+  keys=keys.filter(validKey); if(!keys.length) return;
+  closeSheet(); clearTimeout(heroTimer); animToken++;
+  SES={keys,qs:keys.map(makeQ),i:0,mode:o.mode||'practice',title:o.title||'Övning',ans:[],answered:false,limit:o.limit||0,start:Date.now()};
+  $('#session').hidden=false; document.body.style.overflow='hidden';
+  if(SES.limit){clearInterval(examTimer);examTimer=setInterval(tick,1000)}
+  renderQ();
+}
+function endSession(){clearInterval(examTimer);animToken++;SES=null;$('#session').hidden=true;$('#session').innerHTML='';document.body.style.overflow='';render()}
+function tick(){if(!SES||!SES.limit)return;const left=SES.limit*60-Math.floor((Date.now()-SES.start)/1000);const el=$('#timer');if(el){el.textContent=fmt(Math.max(0,left));el.classList.toggle('low',left<300)}if(left<=0){clearInterval(examTimer);finishExam()}}
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+function renderQ(){
+  const S=SES, q=S.qs[S.i], n=S.qs.length, exam=S.mode==='exam';
+  S.answered=false;
+  const sel=S.ans[S.i];
+  $('#session').innerHTML=`<div class="ses-in">
+    <div class="ses-top"><button class="x" data-act="quit" aria-label="Avsluta">✕</button><div class="ses-title">${esc(S.title)}</div>${S.limit?`<span class="timer num" id="timer">${fmt(S.limit*60-Math.floor((Date.now()-S.start)/1000))}</span>`:''}<span class="ses-count num">${S.i+1}/${n}</span></div>
+    <div class="progress"><i style="width:${(S.i/n)*100}%"></i></div>
+    ${q.visual?`<div class="q-vis">${q.visual}</div>`:''}
+    <h2 class="q-prompt">${q.prompt}</h2>
+    <div class="opts ${q.grid?'grid':''}">${q.opts.map((o,i)=>`<button class="opt ${exam&&sel===i?'sel':''}" data-opt="${i}">${q.grid?'':`<span class="k">${i+1}</span>`}${o.color?`<span class="cdot" style="background:${o.color}"></span>`:''}${o.html?o.html:`<span>${esc(o.label)}</span>`}</button>`).join('')}</div>
+    <div id="fb"></div>
+    <div class="ses-actions" id="acts">${exam?`<button class="btn ghost" data-act="prev" ${S.i===0?'disabled':''}>‹ Föregående</button><button class="btn ${S.i===n-1?'y':''}" data-act="${S.i===n-1?'finish':'next'}">${S.i===n-1?'Lämna in':'Nästa ›'}</button>`:''}</div>
+    ${exam?`<p class="muted num" style="text-align:center;font-size:13.5px;margin-top:14px">${S.ans.filter(a=>a!=null).length} av ${n} besvarade</p>`:''}
+  </div>`;
+  $('#session').scrollTop=0;
+  if(q.kind==='s' && !exam) animateScene($('#session'),q.scen,'intro');
+}
+function choose(i){
+  const S=SES,q=S.qs[S.i];
+  if(S.mode==='exam'){S.ans[S.i]=i;document.querySelectorAll('.opt').forEach((b,j)=>b.classList.toggle('sel',j===i));const c=$('.ses-in p.muted');if(c)c.textContent=`${S.ans.filter(a=>a!=null).length} av ${S.qs.length} besvarade`;return}
+  if(S.answered) return; S.answered=true; S.ans[S.i]=i;
+  const ok=!!q.opts[i].ok; rec(q.key,ok); if(!ok) vib(120);
+  document.querySelectorAll('.opt').forEach((b,j)=>{b.disabled=true;if(q.opts[j].ok)b.classList.add('ok');else if(j===i)b.classList.add('bad')});
+  const right=q.opts.find(o=>o.ok);
+  $('#fb').innerHTML=`<div class="fb ${ok?'ok':'bad'}" role="status"><h3>${ok?'Rätt!':'Inte riktigt'}</h3>${ok?'':`<p><b>Rätt svar:</b> ${esc(right.label)}</p>`}<p>${q.exp}</p>${q.tip?`<p class="muted" style="margin-top:8px"><b>Tänk på:</b> ${q.tip}</p>`:''}</div>`;
+  $('#acts').innerHTML=`${q.kind==='s'?`<button class="btn ghost" data-act="replay">Spela upp igen</button>`:''}<button class="btn y" data-act="next">${S.i===S.qs.length-1?'Se resultat':'Nästa ›'}</button>`;
+  if(q.kind==='s') animateScene($('#session'),q.scen,'main');
+  setTimeout(()=>{const a=$('#acts');a&&a.scrollIntoView({behavior:reduceMotion()?'auto':'smooth',block:'nearest'})},120);
+}
+function next(){const S=SES;if(S.i<S.qs.length-1){S.i++;renderQ()}else{S.mode==='exam'?finishExam():finishPractice()}}
+function finishPractice(){
+  const S=SES; const res=S.qs.map((q,i)=>({q,a:S.ans[i],ok:S.ans[i]!=null&&!!q.opts[S.ans[i]].ok}));
+  const score=res.filter(r=>r.ok).length, wrong=res.filter(r=>!r.ok);
+  showResult({score,total:res.length,wrong,exam:false});
+}
+function finishExam(){
+  const S=SES; clearInterval(examTimer);
+  const res=S.qs.map((q,i)=>({q,a:S.ans[i],ok:S.ans[i]!=null&&!!q.opts[S.ans[i]].ok}));
+  res.forEach(r=>rec(r.q.key,r.ok));
+  const score=res.filter(r=>r.ok).length;
+  const d=new Date(); P.exams.push({date:d.toLocaleDateString('sv-SE')+' '+d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}),score,total:res.length}); saveP();
+  showResult({score,total:res.length,wrong:res.filter(r=>!r.ok),exam:true});
+}
+function showResult({score,total,wrong,exam}){
+  const pct=score/total, pass=pct>=0.8;
+  const msg = pct===1?'Fullt pott!': pass?'Bra jobbat!': pct>=0.6?'Nästan där':'Fortsätt öva';
+  SES.wrongKeys=wrong.map(r=>r.q.key);
+  $('#session').innerHTML=`<div class="ses-in">
+    <div class="ses-top"><button class="x" data-act="quit" aria-label="Stäng">✕</button><div class="ses-title">${esc(SES.title)}</div></div>
+    <div class="result"><div class="score">${score}<span class="muted" style="font-size:32px">/${total}</span></div><h2>${msg}</h2>
+    ${exam?`<span class="pass ${pass?'ok':'bad'}">${pass?'Godkänt':'Inte godkänt'} · gräns ${Math.ceil(total*0.8)} rätt</span>`:`<p class="muted" style="margin:4px 0 0">${wrong.length?'Frågorna du missade kommer tillbaka i Dagens övning.':'Allt rätt – de här frågorna kommer tillbaka mer sällan.'}</p>`}</div>
+    <div class="ses-actions">${wrong.length?`<button class="btn y" data-act="redo">Öva felen igen (${wrong.length})</button>`:''}<button class="btn ghost" data-act="quit">Klar</button></div>
+    ${wrong.length?`<div class="review"><h3 style="font-size:19px;font-weight:800">Gå igenom det du missade</h3>${wrong.map(r=>{const q=r.q;const yours=r.a!=null?q.opts[r.a].label:'Inget svar';const vis=q.sign?signSVG(q.sign):q.kind==='s'?`<span class="sg" style="display:inline-block;width:56px;height:56px;border-radius:8px;overflow:hidden">${sceneSVG(q.scen)}</span>`:'<span></span>';return `<div class="card rv">${vis}<div><h4>${q.kind==='ns'?'Vilket märke är: '+esc(q.answer)+'?':q.prompt}</h4>${q.kind!=='ns'?`<p class="yours">Ditt svar: ${esc(yours)}</p><p class="right">Rätt: ${esc(q.answer)}</p>`:`<p class="yours">Du valde: ${esc(yours)}</p>`}<p class="muted">${q.exp}</p></div></div>`}).join('')}</div>`:''}
+  </div>`;
+  $('#session').scrollTop=0;
+}
+
+/* Vändkort */
+function startFlash(cat){
+  const pool=scopeItems().filter(i=>cat==='all'||i.cat===cat); closeSheet();
+  const ids=pool.length>40?pickSmart(pool.map(i=>'sn:'+i.id),30).map(k=>k.slice(3)):shuffle(pool.map(i=>i.id));
+  SES={mode:'flash',title:'Vändkort · '+(cat==='all'?ALLCAT:CAT[cat]).short,list:ids.map(i=>ITEM[i]),cat,i:0,known:0};
+  $('#session').hidden=false;document.body.style.overflow='hidden';renderFlash();
+}
+function renderFlash(){
+  const S=SES,s=S.list[S.i];
+  if(!s){$('#session').innerHTML=`<div class="ses-in"><div class="ses-top"><button class="x" data-act="quit">✕</button><div class="ses-title">${S.title}</div></div><div class="result"><div class="score">${S.known}<span class="muted" style="font-size:32px">/${S.list.length}</span></div><h2>kunde du direkt</h2><p class="muted">Testa dig på kategorin för att befästa märkena.</p></div><div class="ses-actions"><button class="btn y" data-act="quizcat" data-cat="${S.cat}">Testa dig</button><button class="btn ghost" data-act="quit">Klar</button></div></div>`;return}
+  $('#session').innerHTML=`<div class="ses-in">
+   <div class="ses-top"><button class="x" data-act="quit" aria-label="Stäng">✕</button><div class="ses-title">${S.title}</div><span class="ses-count num">${S.i+1}/${S.list.length}</span></div>
+   <div class="progress"><i style="width:${S.i/S.list.length*100}%"></i></div>
+   <div class="flash" id="flash" data-act="flip" role="button" tabindex="0" aria-label="Vänd kortet"><div class="flash-in">
+     <div class="face">${signSVG(s.id)}<p class="hint">Vad betyder det? Tryck för att vända.</p></div>
+     <div class="face back-f">${signSVG(s.id)}<h3>${esc(s.name)}</h3><p>${esc(shortDesc(s.desc))}</p>${tipFor(s)?`<p class="muted"><b>Tänk på:</b> ${tipFor(s)}</p>`:''}</div>
+   </div></div>
+   <div class="ses-actions" id="facts"><button class="btn ghost" data-act="flip">Vänd kortet</button></div>
+  </div>`;
+}
+function flip(){const f=$('#flash');if(!f)return;f.classList.add('flip');$('#facts').innerHTML=`<button class="btn ghost" data-act="fno">Kunde inte</button><button class="btn y" data-act="fyes">Kunde det</button>`}
+function flashAns(ok){const S=SES;const s=S.list[S.i];rec('sn:'+s.id,ok);if(ok)S.known++;S.i++;renderFlash()}
+
+/* ============================================================
+   HÄNDELSER
+   ============================================================ */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-nav],[data-act],[data-cat],[data-sign],[data-topic],[data-scen],[data-opt],[data-scope]');
+  if(e.target.id==='sheet'){closeSheet();return}
+  if(!t) return;
+  const d=t.dataset;
+  if(d.opt!=null&&SES){choose(+d.opt);return}
+  if(d.act){
+    switch(d.act){
+      case 'smart':{const wk=shuffle(wrongKeys()).slice(0,4);const pool=[...signKeys(scopeItems()),...ALL_RULE_KEYS,...ALL_SCEN_KEYS].filter(k=>!wk.includes(k));const keys=shuffle([...wk,...pickSmart(pool,12-wk.length)]);startSession(keys,{title:'Dagens övning'});return}
+      case 'wrong':startSession(shuffle(wrongKeys()).slice(0,15),{title:'Mina fel'});return;
+      case 'quizcat':{const c=d.cat||'all';const keys=pickSmart(signKeys(scopeItems().filter(i=>c==='all'||i.cat===c)),15);if(SES)endSession();startSession(shuffle(keys),{title:'Test · '+(c==='all'?'Alla kategorier':CAT[c].short)});return}
+      case 'quizone':{const id=d.sign;startSession(['sn:'+id,'ns:'+id],{title:ITEM[id].name});return}
+      case 'flash':startFlash(d.cat);return;
+      case 'flip':flip();return;
+      case 'fyes':flashAns(true);return;
+      case 'fno':flashAns(false);return;
+      case 'quiztopic':{const keys=shuffle(RULES.filter(r=>r[1]===d.topic).map(r=>'r:'+r[0]));startSession(keys,{title:TOPIC[d.topic].title});return}
+      case 'scenall':startSession(shuffle(ALL_SCEN_KEYS),{title:'Vem kör först?'});return;
+      case 'exam':{const n=+d.n,min=+d.min;const nS=Math.round(n*.4),nSc=Math.min(SCEN.length,Math.round(n*.1)),nR=n-nS-nSc;const sIds=shuffle(ITEMS.filter(i=>i.common)).slice(0,nS).map(s=>(Math.random()<.5?'sn:':'ns:')+s.id);const keys=shuffle([...sIds,...shuffle(ALL_RULE_KEYS).slice(0,nR),...shuffle(ALL_SCEN_KEYS).slice(0,nSc)]);startSession(keys,{mode:'exam',title:n>=65?'Fullt prov':'Snabbprov',limit:min});return}
+      case 'next':next();return;
+      case 'prev':if(SES.i>0){SES.i--;renderQ()}return;
+      case 'finish':{const un=SES.ans.filter(a=>a!=null).length;if(un<SES.qs.length&&!t.dataset.sure){t.dataset.sure='1';t.textContent=`${SES.qs.length-un} obesvarade – lämna in ändå?`;return}finishExam();return}
+      case 'replay':animateScene($('#session'),SES.qs[SES.i].scen,'main');return;
+      case 'redo':{const k=SES.wrongKeys;const ti=SES.title;startSession(shuffle(k),{title:'Öva felen · '+ti.replace(/^Öva felen · /,'')});return}
+      case 'quit':{if(SES&&SES.mode==='exam'&&!SES.wrongKeys&&!t.dataset.sure){t.dataset.sure='1';t.style.width='auto';t.style.padding='0 12px';t.style.borderRadius='99px';t.textContent='Avbryt provet?';return}endSession();return}
+      case 'closesheet':closeSheet();return;
+      case 'reset1':$('#resetZone').innerHTML=`Allt sparat raderas. <button class="linkbtn" data-act="reset2" style="color:var(--bad)">Ja, nollställ</button> · <button class="linkbtn" data-act="reset0">Avbryt</button>`;return;
+      case 'reset2':P={items:{},exams:[],days:{}};saveP();render();return;
+      case 'reset0':render();return;
+    }
+  }
+  if(d.nav){if(SES)endSession();go(d.nav);return}
+  if(d.scope){SCOPE=d.scope;try{localStorage.setItem('trafikspel.scope',SCOPE)}catch(e){}render();return}
+  if(d.cat&&!d.act){go('signs',d.cat);return}
+  if(d.sign){openSign(d.sign);return}
+  if(d.topic){go('rules',d.topic);return}
+  if(d.scen){const first='s:'+d.scen;startSession([first,...shuffle(ALL_SCEN_KEYS.filter(k=>k!==first))],{title:'Vem kör först?'});return}
+});
+document.addEventListener('input',e=>{if(e.target.id==='sdRange')updStop()});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(!$('#sheet').hidden){closeSheet();return}}
+  if(!SES) return;
+  if(SES.mode==='flash'){if(e.key===' '||e.key==='Enter'){e.preventDefault();const f=$('#flash');if(f&&!f.classList.contains('flip'))flip()}return}
+  const n=parseInt(e.key,10);
+  if(n>=1&&n<=4&&SES.qs&&SES.qs[SES.i]&&n<=SES.qs[SES.i].opts.length&&!$('.result')){choose(n-1);return}
+  if(e.key==='Enter'&&e.target.closest&&e.target.closest('button'))return;
+  if(e.key==='Enter'&&!$('.result')){if(SES.mode==='exam'||SES.answered){e.preventDefault();next()}}
+});
+
+/* start */
+try{const v=JSON.parse(localStorage.getItem('trafikspel.view'));if(v&&['home','signs','rules','scen','exam'].includes(v[0])){VIEW=v[0];SUB=v[1]}}catch(e){}
+const _render=render; render=function(){_render(); if(VIEW==='rules'&&SUB==='fart') updStop();};
+render();
+</script>
+
+</body>
+</html>
